@@ -1,0 +1,39 @@
+name: Napi Arfrissites Robot
+
+on:
+  schedule:
+    # Minden nap reggel 06:00-kor fut le (UTC idő szerint, tehát nálunk kb. 07:00 vagy 08:00)
+    - cron: '0 6 * * *'
+  # Ez azért kell, hogy kézzel is el tudd indítani teszteléshez:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kód letöltése (Checkout)
+        uses: actions/checkout@v3
+
+      - name: Python telepítése
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Szükséges csomagok telepítése
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Robot futtatása
+        run: python scraper.py
+
+      - name: Változások mentése (Commit & Push)
+        run: |
+          git config --global user.name 'GitHub Action Robot'
+          git config --global user.email 'robot@action.com'
+          git add friss_arak.json
+          git commit -m "Napi arfrissites - Robot" || echo "Nincs változás"
+          git push

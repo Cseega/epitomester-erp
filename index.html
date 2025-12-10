@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ÉpítőMester ERP v7.0 - Cloud Edition</title>
+    <title>ÉpítőMester ERP v8.0 - Mérnöki Normák</title>
     <style>
-        /* --- STÍLUSOK (DESIGN) --- */
+        /* --- STÍLUSOK --- */
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f6f8; color: #333; }
         header { background-color: #2c3e50; color: white; padding: 15px; text-align: center; }
         
-        nav { display: flex; justify-content: center; background-color: #34495e; flex-wrap: wrap; sticky: top; }
+        nav { display: flex; justify-content: center; background-color: #34495e; flex-wrap: wrap; }
         nav button { background: none; border: none; color: white; padding: 15px 20px; cursor: pointer; font-size: 16px; transition: 0.2s; }
         nav button:hover, nav button.active { background-color: #e67e22; }
 
@@ -59,21 +59,21 @@
 <body>
 
 <header>
-    <h1>🏗️ ÉpítőMester ERP v7.0</h1>
+    <h1>🏗️ ÉpítőMester ERP v8.0</h1>
 </header>
 
 <nav>
     <button onclick="navTo('dashboard')" class="active">Projektek</button>
     <button onclick="navTo('editor')">Aktív Projekt</button>
+    <button onclick="navTo('norms')">📏 Normák & Receptek</button>
     <button onclick="navTo('team')">Pénztár</button>
-    <button onclick="navTo('database')">⚡ Adatbázis (Robot)</button>
+    <button onclick="navTo('database')">⚙️ Beállítások</button>
 </nav>
 
 <div class="container">
 
     <div id="dashboard" class="section active">
         <div class="card" style="border-left-color: #2c3e50;">
-            
             <div class="control-bar">
                 <div class="sort-group">
                     <label style="margin:0; margin-right:5px;">Nézet:</label>
@@ -82,7 +82,6 @@
                         <option value="archived">🗄️ Archívum</option>
                     </select>
                 </div>
-
                 <div class="sort-group">
                     <label style="margin:0; margin-right:5px;">Rendezés:</label>
                     <select id="sortBy" onchange="renderProjectList()" style="width: auto;">
@@ -94,7 +93,6 @@
                     <button onclick="toggleSortDir()" id="sortDirBtn" class="btn-info" style="padding: 10px; width:auto;">⬇️</button>
                 </div>
             </div>
-
             <div id="project-list"></div>
             <button class="btn-info" onclick="createNewProject()" style="margin-top:20px;">+ Új Projekt Indítása</button>
         </div>
@@ -146,10 +144,7 @@
                 <div class="col"><label>Napok:</label><input type="number" id="logDays" value="1"></div>
                 <div class="col"><label>&nbsp;</label><button class="btn-primary" onclick="addWorkLog()">Rögzítés</button></div>
             </div>
-            <table style="width:100%">
-                <thead><tr><th>Név</th><th>Nap</th><th>Saját Bér</th><th>Összeg</th><th></th></tr></thead>
-                <tbody id="worklog-table"></tbody>
-            </table>
+            <table style="width:100%"><tbody id="worklog-table"></tbody></table>
         </div>
 
         <div class="card finance-panel">
@@ -164,6 +159,67 @@
                 <div class="col"><label>Aktuális Profit:</label><div id="fin-profit" class="big-number">0 Ft</div></div>
             </div>
             <button class="btn-primary" style="margin-top:20px;" onclick="saveProject()">PROJEKT MENTÉSE</button>
+        </div>
+    </div>
+
+    <div id="norms" class="section">
+        <div class="card">
+            <h2>📏 Norma és Recept Szerkesztő</h2>
+            <p>Itt állíthatod be, hogy <strong>1 egységhez (pl. 1 nm)</strong> pontosan mennyi anyag szükséges.</p>
+            
+            <div class="row" style="align-items: center; background: #f0f8ff; padding: 15px; border-radius: 5px;">
+                <div class="col">
+                    <label>Válassz Munkanemet Szerkesztésre:</label>
+                    <select id="editNormSelect" onchange="renderNormEditor()"></select>
+                </div>
+                <div class="col">
+                    <label>Vagy Hozz Létre Újat:</label>
+                    <div style="display:flex; gap:5px;">
+                        <input type="text" id="newNormName" placeholder="Pl. Térkövezés">
+                        <button class="btn-info" onclick="createNewNorm()">Létrehozás</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="normEditorPanel" style="display:none; margin-top:20px;">
+                <h3 id="normTitle"></h3>
+                <div class="row">
+                    <div class="col">
+                        <label>Mértékegység:</label>
+                        <input type="text" id="normUnit" onchange="saveNormMeta()">
+                    </div>
+                    <div class="col">
+                        <label>Piaci Munkadíj / egység (Ft):</label>
+                        <input type="number" id="normLaborPrice" onchange="saveNormMeta()">
+                    </div>
+                </div>
+
+                <h4>Hozzávalók (Recept) 1 egységre:</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Anyag Neve</th>
+                            <th>Szükséges Mennyiség (1 egységhez)</th>
+                            <th>Anyag Egység</th>
+                            <th>Alapár (Ft)</th>
+                            <th>Törlés</th>
+                        </tr>
+                    </thead>
+                    <tbody id="normTableBody"></tbody>
+                </table>
+                
+                <div class="row" style="background:#eee; padding:10px; margin-top:10px; border-radius:5px;">
+                    <div class="col"><input type="text" id="newMatName" placeholder="Új anyag neve"></div>
+                    <div class="col"><input type="number" id="newMatQty" placeholder="Mennyiség"></div>
+                    <div class="col"><input type="text" id="newMatUnit" placeholder="Egység"></div>
+                    <div class="col"><input type="number" id="newMatPrice" placeholder="Ár"></div>
+                    <div class="col"><button class="btn-primary" onclick="addMaterialToNorm()">+ Hozzáadás</button></div>
+                </div>
+                
+                <div style="margin-top:20px; text-align:right;">
+                     <button class="btn-danger" onclick="deleteNormCategory()">🗑️ Teljes Munkanem Törlése</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -189,13 +245,11 @@
             <h2>🤖 Robot Árfrissítés (Felhőből)</h2>
             <div class="robot-box">
                 <p>A GitHub Serverless Robot által generált árak letöltése.</p>
-                <p style="font-size:0.9em; color:#555;">(Győződj meg róla, hogy a kódban beállítottad a helyes URL-t!)</p>
                 <button class="btn-primary" style="font-size:1.2em; padding: 15px;" onclick="processRobotURL()">☁️ Frissítés a Felhőből</button>
             </div>
         </div>
-
         <div class="card">
-            <h2>Kézi Eszközök</h2>
+            <h2>Egyéb Eszközök</h2>
             <div class="row" style="background:#e8f6f3; padding:15px; border-radius:5px;">
                 <div class="col"><label>Globális áremelés (%):</label><input type="number" id="priceMultiplier" placeholder="Pl. 10"></div>
                 <div class="col"><label>&nbsp;</label><button class="btn-warning" onclick="applyGlobalPriceChange()">Módosítás</button></div>
@@ -207,14 +261,10 @@
                 <button class="btn-info" onclick="processCSV()" style="margin-top:10px;">CSV Betöltés</button>
             </div>
         </div>
-
         <div class="card">
-            <h2>Nyers Adatbázis</h2>
-            <textarea id="db-json" style="width:100%; height:300px; border:1px solid #ccc; font-family:monospace;"></textarea>
-            <div class="row">
-                <button class="btn-primary" onclick="saveDatabase()">Kézi Mentés</button>
-                <button class="btn-danger" onclick="resetDB()">Visszaállítás</button>
-            </div>
+            <h2>Nyers Adatbázis (Backup)</h2>
+            <textarea id="db-json" style="width:100%; height:200px; border:1px solid #ccc; font-family:monospace;"></textarea>
+            <button class="btn-primary" onclick="saveDatabase()">Kézi Mentés</button>
         </div>
     </div>
 
@@ -222,9 +272,8 @@
 
 <script>
     // ==========================================
-    // ⚙️ BEÁLLÍTÁSOK - Ezt írd át a sajátodra!
+    // ⚙️ BEÁLLÍTÁS
     // ==========================================
-    // Formátum: https://raw.githubusercontent.com/FELHASZNALO/REPO/main/friss_arak.json
     const ROBOT_URL = "https://raw.githubusercontent.com/Cseega/epitomester-erp/refs/heads/main/friss_arak.json"; 
 
 
@@ -240,17 +289,17 @@
     let payouts = JSON.parse(localStorage.getItem('payouts')) || [];
     let db = JSON.parse(localStorage.getItem('constructionDB_v4')) || defaultDB;
 
-    if(db["Falazás"] && !db["Falazás"].materials) db = defaultDB; // Migrációs védelem
+    if(db["Falazás"] && !db["Falazás"].materials) db = defaultDB; 
     let sortDirection = 'desc'; 
     let currentProject = {};
 
-    // --- INICIALIZÁLÁS ---
     init();
 
     function init() {
         renderProjectList();
         renderBalanceTable();
         populateDBSelect();
+        populateNormSelect(); // Új!
         document.getElementById('db-json').value = JSON.stringify(db, null, 4);
     }
     
@@ -261,6 +310,116 @@
         if(id === 'team') renderBalanceTable(); 
         if(id === 'database') document.getElementById('db-json').value = JSON.stringify(db, null, 4);
         if(id === 'dashboard') renderProjectList();
+        if(id === 'norms') populateNormSelect();
+    }
+
+    // --- ÚJ: NORMA SZERKESZTŐ LOGIKA ---
+
+    function populateNormSelect() {
+        const s = document.getElementById('editNormSelect');
+        s.innerHTML = "<option value=''>-- Válassz szerkesztéshez --</option>";
+        for(let k in db) s.innerHTML += `<option value="${k}">${k}</option>`;
+    }
+
+    function createNewNorm() {
+        const name = document.getElementById('newNormName').value;
+        if(!name) { alert("Adj nevet!"); return; }
+        if(db[name]) { alert("Ilyen már van!"); return; }
+        
+        db[name] = { unit: "nm", normPrice: 0, materials: [] };
+        saveAllDB();
+        populateNormSelect();
+        document.getElementById('editNormSelect').value = name;
+        renderNormEditor();
+        alert("Létrehozva! Most add hozzá az anyagokat.");
+    }
+
+    function renderNormEditor() {
+        const key = document.getElementById('editNormSelect').value;
+        const panel = document.getElementById('normEditorPanel');
+        
+        if(!key || !db[key]) { panel.style.display = "none"; return; }
+        
+        panel.style.display = "block";
+        document.getElementById('normTitle').innerText = key + " szerkesztése";
+        document.getElementById('normUnit').value = db[key].unit;
+        document.getElementById('normLaborPrice').value = db[key].normPrice;
+
+        const tbody = document.getElementById('normTableBody');
+        tbody.innerHTML = "";
+        
+        db[key].materials.forEach((m, idx) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><input type="text" value="${m.name}" onchange="updateNormItem('${key}', ${idx}, 'name', this.value)"></td>
+                    <td><input type="number" value="${m.qtyPerUnit}" onchange="updateNormItem('${key}', ${idx}, 'qtyPerUnit', this.value)"></td>
+                    <td><input type="text" value="${m.unit}" onchange="updateNormItem('${key}', ${idx}, 'unit', this.value)"></td>
+                    <td><input type="number" value="${m.price}" onchange="updateNormItem('${key}', ${idx}, 'price', this.value)"></td>
+                    <td><button class="btn-danger" onclick="deleteNormItem('${key}', ${idx})">X</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    function saveNormMeta() {
+        const key = document.getElementById('editNormSelect').value;
+        if(key && db[key]) {
+            db[key].unit = document.getElementById('normUnit').value;
+            db[key].normPrice = Number(document.getElementById('normLaborPrice').value);
+            saveAllDB();
+        }
+    }
+
+    function updateNormItem(key, idx, field, val) {
+        if(field === 'qtyPerUnit' || field === 'price') val = Number(val);
+        db[key].materials[idx][field] = val;
+        saveAllDB();
+    }
+
+    function addMaterialToNorm() {
+        const key = document.getElementById('editNormSelect').value;
+        const name = document.getElementById('newMatName').value;
+        const qty = document.getElementById('newMatQty').value;
+        const unit = document.getElementById('newMatUnit').value;
+        const price = document.getElementById('newMatPrice').value;
+
+        if(!name || !qty || !price) { alert("Minden mezőt tölts ki!"); return; }
+
+        db[key].materials.push({
+            name: name,
+            qtyPerUnit: Number(qty),
+            unit: unit,
+            price: Number(price)
+        });
+        
+        // Mezők törlése
+        document.getElementById('newMatName').value = "";
+        document.getElementById('newMatQty').value = "";
+        document.getElementById('newMatPrice').value = "";
+        
+        saveAllDB();
+        renderNormEditor();
+    }
+
+    function deleteNormItem(key, idx) {
+        db[key].materials.splice(idx, 1);
+        saveAllDB();
+        renderNormEditor();
+    }
+
+    function deleteNormCategory() {
+        const key = document.getElementById('editNormSelect').value;
+        if(confirm(`Biztosan törlöd a teljes "${key}" kategóriát?`)) {
+            delete db[key];
+            saveAllDB();
+            populateNormSelect();
+            document.getElementById('normEditorPanel').style.display = "none";
+        }
+    }
+
+    function saveAllDB() {
+        localStorage.setItem('constructionDB_v4', JSON.stringify(db));
+        populateDBSelect(); // Frissüljön a kalkulátor dropdown is
     }
 
     // --- PROJEKT KEZELÉS ---
@@ -293,81 +452,39 @@
         currentProject.estDays = Number(document.getElementById('estDays').value);
         currentProject.estWorkers = Number(document.getElementById('estWorkers').value);
         currentProject.estAvgWage = Number(document.getElementById('estAvgWage').value);
-        
         if(currentProject.archived === undefined) currentProject.archived = false;
-
         const fin = calculateFinance();
         currentProject.totalOffer = fin.offerPrice;
         currentProject.totalCost = fin.realCost;
         currentProject.profit = fin.profit; 
-
         if(!currentProject.id) { currentProject.id = Date.now(); projects.push(currentProject); }
         else { const idx = projects.findIndex(p => p.id == currentProject.id); projects[idx] = currentProject; }
-        
         localStorage.setItem('projects_v4', JSON.stringify(projects));
         alert("Projekt mentve!"); renderProjectList(); renderBalanceTable(); navTo('dashboard');
     }
 
-    // --- RENDEZÉS ÉS LISTÁZÁS ---
-    function toggleSortDir() {
-        sortDirection = sortDirection === 'desc' ? 'asc' : 'desc';
-        document.getElementById('sortDirBtn').innerText = sortDirection === 'desc' ? '⬇️' : '⬆️';
-        renderProjectList();
-    }
-    function toggleArchive(id) {
-        const p = projects.find(x => x.id == id); if(!p) return;
-        const action = p.archived ? "visszaállítod" : "archiválod";
-        if(confirm(`Biztosan ${action}?`)) {
-            p.archived = !p.archived;
-            localStorage.setItem('projects_v4', JSON.stringify(projects));
-            renderProjectList();
-        }
-    }
+    function toggleSortDir() { sortDirection = sortDirection === 'desc' ? 'asc' : 'desc'; document.getElementById('sortDirBtn').innerText = sortDirection === 'desc' ? '⬇️' : '⬆️'; renderProjectList(); }
+    function toggleArchive(id) { const p = projects.find(x => x.id == id); if(confirm(`Biztosan ${p.archived?"visszaállítod":"archiválod"}?`)) { p.archived = !p.archived; localStorage.setItem('projects_v4', JSON.stringify(projects)); renderProjectList(); } }
+    
     function renderProjectList() {
         const list = document.getElementById('project-list'); list.innerHTML = "";
         const viewMode = document.getElementById('viewFilter').value;
         const sortBy = document.getElementById('sortBy').value;
-        
-        let filtered = projects.filter(p => {
-            const isArchived = !!p.archived;
-            return viewMode === 'archived' ? isArchived : !isArchived;
-        });
-
+        let filtered = projects.filter(p => viewMode === 'archived' ? !!p.archived : !p.archived);
         filtered.sort((a, b) => {
-            let valA = a[sortBy] || 0; let valB = b[sortBy] || 0;
-            if(sortBy === 'profit') { // Ha régi adat és nincs mentve profit
-                if(a.profit === undefined) valA = (a.totalOffer||0) - (a.totalCost||0);
-                if(b.profit === undefined) valB = (b.totalOffer||0) - (b.totalCost||0);
-            }
+            let valA = a[sortBy]||0, valB = b[sortBy]||0;
+            if(sortBy==='profit') { if(a.profit===undefined) valA=(a.totalOffer||0)-(a.totalCost||0); if(b.profit===undefined) valB=(b.totalOffer||0)-(b.totalCost||0); }
             return sortDirection === 'asc' ? valA - valB : valB - valA;
         });
-
-        if(filtered.length === 0) { list.innerHTML = `<p style="text-align:center; color:#777;">Nincs elem ebben a nézetben.</p>`; return; }
-
+        if(filtered.length === 0) { list.innerHTML = `<p style="text-align:center;">Nincs elem.</p>`; return; }
         filtered.forEach(p => {
             const isLoss = (p.totalCost > p.totalOffer);
             const rowClass = isLoss ? 'danger-row' : (p.archived ? 'archived-row' : '');
-            const statusColor = isLoss ? 'red' : 'green';
             const profitVal = (p.profit !== undefined) ? p.profit : (p.totalOffer - p.totalCost);
-            const archiveText = p.archived ? "📂 Visszaállítás" : "🗄️ Archiválás";
-            const archiveColor = p.archived ? "btn-secondary" : "btn-warning";
-
-            list.innerHTML += `
-                <div class="row ${rowClass}" style="border-bottom:1px solid #eee; padding:10px;">
-                    <div class="col"><strong>${p.name}</strong> (${p.client})<br><small>${p.address}</small></div>
-                    <div class="col" style="text-align:right;">
-                        <span style="color:${statusColor}; font-weight:bold;">Bevétel: ${Math.round(p.totalOffer||0).toLocaleString()} / Profit: ${Math.round(profitVal).toLocaleString()}</span>
-                        <div style="background:#ddd; height:6px; width:100%; margin-top:5px;"><div style="height:100%; background:${statusColor}; width:${p.progress}%"></div></div>
-                    </div>
-                    <div class="col" style="flex:0.6; display:flex; gap:5px; justify-content: flex-end;">
-                        <button class="btn-info" onclick="editProject(${p.id})">Megnyitás</button>
-                        <button class="${archiveColor}" style="font-size:0.8em;" onclick="toggleArchive(${p.id})">${archiveText}</button>
-                    </div>
-                </div>`;
+            list.innerHTML += `<div class="row ${rowClass}" style="border-bottom:1px solid #eee; padding:10px;"><div class="col"><strong>${p.name}</strong> (${p.client})<br><small>${p.address}</small></div><div class="col" style="text-align:right;"><span style="color:${isLoss?'red':'green'}; font-weight:bold;">Bevétel: ${Math.round(p.totalOffer||0).toLocaleString()} / Profit: ${Math.round(profitVal).toLocaleString()}</span><div style="background:#ddd; height:6px; width:100%; margin-top:5px;"><div style="height:100%; background:${isLoss?'red':'green'}; width:${p.progress}%"></div></div></div><div class="col" style="flex:0.6; display:flex; gap:5px; justify-content: flex-end;"><button class="btn-info" onclick="editProject(${p.id})">Megnyitás</button><button class="${p.archived?'btn-secondary':'btn-warning'}" style="font-size:0.8em;" onclick="toggleArchive(${p.id})">${p.archived?"📂":"🗄️"}</button></div></div>`;
         });
     }
 
-    // --- EDITOR LOGIKA ---
     function updateCalcHint() {
         const type = document.getElementById('workTypeSelect').value, qty = document.getElementById('workQty').value;
         if(type && qty && db[type]) {
@@ -384,10 +501,8 @@
         }
     }
     function addWorkLog() {
-        const sel = document.getElementById('logWorkerSelect');
-        const days = Number(document.getElementById('logDays').value);
-        if(!sel.value) { alert("Válassz dolgozót!"); return; }
-        if(!days || days <= 0) return;
+        const sel = document.getElementById('logWorkerSelect'); const days = Number(document.getElementById('logDays').value);
+        if(!sel.value || !days) return;
         if(!currentProject.workLog) currentProject.workLog = [];
         currentProject.workLog.push({ worker: sel.value, days: days, rate: Number(sel.options[sel.selectedIndex].getAttribute('data-rate')) });
         updateEditorUI();
@@ -430,7 +545,6 @@
         document.getElementById('projectAddress').value = ""; document.getElementById('progress').value = 0;
     }
 
-    // --- PÉNZTÁR ---
     function addEmployee() { const n = document.getElementById('empName').value, r = document.getElementById('empRate').value; if(n && r) { employees.push({name:n, rate:r}); localStorage.setItem('employees', JSON.stringify(employees)); renderBalanceTable(); updateEditorUI(); }}
     function addPayout() { const w = document.getElementById('payWorkerSelect').value, a = Number(document.getElementById('payAmount').value); if(w && a) { payouts.push({ worker: w, amount: a }); localStorage.setItem('payouts', JSON.stringify(payouts)); alert("Kifizetés rögzítve!"); renderBalanceTable(); }}
     function renderBalanceTable() {
@@ -445,16 +559,15 @@
     }
     function delEmp(n) { if(confirm("Törlöd?")) { employees = employees.filter(e => e.name !== n); localStorage.setItem('employees', JSON.stringify(employees)); renderBalanceTable(); } }
 
-    // --- ADATBÁZIS & ROBOT ---
     function populateDBSelect() { const s = document.getElementById('workTypeSelect'); s.innerHTML = "<option value=''>-- Válassz --</option>"; for(let k in db) s.innerHTML += `<option value="${k}">${k}</option>`; }
-    function saveDatabase() { try { db = JSON.parse(document.getElementById('db-json').value); localStorage.setItem('constructionDB_v4', JSON.stringify(db)); populateDBSelect(); alert("Mentve!"); } catch(e) { alert("Hibás JSON!"); } }
-    function resetDB() { if(confirm("Törlöd az egyedi árakat?")) { db = defaultDB; localStorage.setItem('constructionDB_v4', JSON.stringify(db)); document.getElementById('db-json').value = JSON.stringify(db, null, 4); populateDBSelect(); } }
+    function saveDatabase() { try { db = JSON.parse(document.getElementById('db-json').value); saveAllDB(); alert("Mentve!"); } catch(e) { alert("Hibás JSON!"); } }
+    function resetDB() { if(confirm("Törlöd az egyedi árakat?")) { db = defaultDB; saveAllDB(); } }
     function applyGlobalPriceChange() {
         const p = Number(document.getElementById('priceMultiplier').value); if(!p) return;
         if(!confirm(`MINDEN árat módosítasz ${p}%-kal?`)) return;
         const m = 1 + (p/100);
         for(let k in db) { if(db[k].normPrice) db[k].normPrice = Math.round(db[k].normPrice * m); if(db[k].materials) db[k].materials.forEach(mat => mat.price = Math.round(mat.price * m)); }
-        localStorage.setItem('constructionDB_v4', JSON.stringify(db)); document.getElementById('db-json').value = JSON.stringify(db, null, 4); alert("Kész!");
+        saveAllDB(); alert("Kész!");
     }
     function processCSV() {
         const txt = document.getElementById('csvInput').value; if(!txt) return;
@@ -468,54 +581,19 @@
                 }
             }
         });
-        if(c>0) { localStorage.setItem('constructionDB_v4', JSON.stringify(db)); document.getElementById('db-json').value = JSON.stringify(db, null, 4); alert(`${c} tétel frissítve!`); }
+        if(c>0) { saveAllDB(); alert(`${c} tétel frissítve!`); }
     }
-
-    // --- ROBOT URL BETÖLTÉS (FETCH) ---
     async function processRobotURL() {
-        const btn = document.querySelector('button[onclick="processRobotURL()"]');
-        const originalText = btn.innerText;
-        btn.innerText = "⏳ Letöltés a GitHubról...";
-
+        const btn = document.querySelector('button[onclick="processRobotURL()"]'); const txt = btn.innerText; btn.innerText = "⏳ Letöltés...";
         try {
-            // A konstans a script tetején van definiálva!
-            const response = await fetch(ROBOT_URL);
-            if (!response.ok) throw new Error("Hálózati hiba: " + response.status);
-            
-            const data = await response.json();
-            const robotPrices = data.prices;
-            let updateCount = 0;
-
-            for (let category in db) {
-                if (db[category].materials) {
-                    db[category].materials.forEach(material => {
-                        if (robotPrices[material.name]) {
-                            material.price = robotPrices[material.name];
-                            updateCount++;
-                        }
-                    });
-                }
-            }
-
-            if (updateCount > 0) {
-                localStorage.setItem('constructionDB_v4', JSON.stringify(db));
-                document.getElementById('db-json').value = JSON.stringify(db, null, 4);
-                alert(`✅ SIKER! ${updateCount} db tétel frissítve a felhőből!\nFrissítve: ${data.last_updated}`);
-            } else {
-                alert("⚠️ A fájlt elértem, de nem volt benne egyező nevű termék.");
-            }
-
-        } catch (error) {
-            alert("Hiba: Nem sikerült letölteni az árakat.\nEllenőrizd a GitHub URL-t a kódban!");
-            console.error(error);
-        } finally {
-            btn.innerText = originalText;
-        }
+            const r = await fetch(ROBOT_URL); if(!r.ok) throw new Error("Hiba");
+            const d = await r.json(); const rp = d.prices; let c = 0;
+            for(let k in db) if(db[k].materials) db[k].materials.forEach(m => { if(rp[m.name]) { m.price = rp[m.name]; c++; }});
+            if(c>0) { saveAllDB(); alert(`✅ ${c} db tétel frissítve!`); } else alert("Nincs egyezés.");
+        } catch(e) { alert("Nem sikerült letölteni."); } finally { btn.innerText = txt; }
     }
 
 </script>
 
 </body>
 </html>
-
-

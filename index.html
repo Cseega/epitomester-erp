@@ -3,20 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ÉpítőMester ERP v6.0 - Management Edition</title>
+    <title>ÉpítőMester ERP v7.0 - Cloud Edition</title>
     <style>
-        /* CSS STÍLUSOK */
+        /* --- STÍLUSOK (DESIGN) --- */
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f6f8; color: #333; }
         header { background-color: #2c3e50; color: white; padding: 15px; text-align: center; }
         
-        nav { display: flex; justify-content: center; background-color: #34495e; flex-wrap: wrap; }
+        nav { display: flex; justify-content: center; background-color: #34495e; flex-wrap: wrap; sticky: top; }
         nav button { background: none; border: none; color: white; padding: 15px 20px; cursor: pointer; font-size: 16px; transition: 0.2s; }
         nav button:hover, nav button.active { background-color: #e67e22; }
 
         .container { padding: 20px; max-width: 1250px; margin: auto; }
         .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #3498db; }
-        .card.danger-row { background-color: #ffe6e6 !important; border-left-color: #c0392b !important; }
-        .card.archived-row { background-color: #f8f9fa !important; border-left-color: #95a5a6 !important; opacity: 0.8; }
+        
+        /* Speciális sorok */
+        .card.danger-row, .danger-row { background-color: #ffe6e6 !important; border-left-color: #c0392b !important; }
+        .card.archived-row, .archived-row { background-color: #f8f9fa !important; border-left-color: #95a5a6 !important; opacity: 0.8; }
 
         h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
         h3 { color: #e67e22; margin-top: 20px; margin-bottom: 10px; font-size: 1.1em; }
@@ -36,9 +38,9 @@
         .btn-info { background-color: #3498db; color: white; }
         .btn-warning { background-color: #f39c12; color: white; }
         .btn-danger { background-color: #c0392b; color: white; padding: 5px 10px; font-size: 0.8em; }
-        .btn-secondary { background-color: #95a5a6; color: white; }
+        .btn-secondary { background-color: #7f8c8d; color: white; }
         
-        /* ÚJ: Control Bar a Dashboardon */
+        /* Dashboard Control Bar */
         .control-bar { background: #eef2f3; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .sort-group { display: flex; gap: 5px; align-items: center; }
 
@@ -46,7 +48,7 @@
         .big-number { font-size: 1.4em; font-weight: bold; color: #d35400; }
         .ref-price-box { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 5px; font-size: 0.9em; margin-top: 5px; border: 1px solid #c3e6cb; }
         
-        .robot-box { border: 2px solid #3498db; background-color: #eaf2f8; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
+        .robot-box { border: 2px solid #2980b9; background-color: #eaf2f8; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 20px; }
         .import-box { border: 2px dashed #bdc3c7; padding: 20px; text-align: center; background: #fafafa; margin-top: 15px; }
 
         .section { display: none; }
@@ -57,14 +59,14 @@
 <body>
 
 <header>
-    <h1>🏗️ ÉpítőMester ERP v6.0</h1>
+    <h1>🏗️ ÉpítőMester ERP v7.0</h1>
 </header>
 
 <nav>
     <button onclick="navTo('dashboard')" class="active">Projektek</button>
     <button onclick="navTo('editor')">Aktív Projekt</button>
     <button onclick="navTo('team')">Pénztár</button>
-    <button onclick="navTo('database')">⚡ Adatbázis & Árak</button>
+    <button onclick="navTo('database')">⚡ Adatbázis (Robot)</button>
 </nav>
 
 <div class="container">
@@ -74,7 +76,7 @@
             
             <div class="control-bar">
                 <div class="sort-group">
-                    <strong>Nézet:</strong>
+                    <label style="margin:0; margin-right:5px;">Nézet:</label>
                     <select id="viewFilter" onchange="renderProjectList()" style="width: auto;">
                         <option value="active">🟢 Aktív Projektek</option>
                         <option value="archived">🗄️ Archívum</option>
@@ -82,14 +84,14 @@
                 </div>
 
                 <div class="sort-group">
-                    <strong>Rendezés:</strong>
+                    <label style="margin:0; margin-right:5px;">Rendezés:</label>
                     <select id="sortBy" onchange="renderProjectList()" style="width: auto;">
                         <option value="id">Létrehozás ideje</option>
                         <option value="progress">Haladás (%)</option>
                         <option value="totalOffer">Bevétel (Ár)</option>
                         <option value="profit">Profit</option>
                     </select>
-                    <button onclick="toggleSortDir()" id="sortDirBtn" class="btn-info" style="padding: 10px;">⬇️</button>
+                    <button onclick="toggleSortDir()" id="sortDirBtn" class="btn-info" style="padding: 10px; width:auto;">⬇️</button>
                 </div>
             </div>
 
@@ -127,7 +129,7 @@
         </div>
 
         <div class="card">
-            <h3>II. Munkadíj</h3>
+            <h3>II. Munkadíj Tervezés</h3>
             <div class="ref-price-box"><strong>📈 Piaci Kontroll (Norma):</strong> <span id="marketLaborRef" style="font-weight:bold;">0 Ft</span>.</div>
             <div class="row" style="margin-top:15px;">
                 <div class="col"><label>Becsült Napok:</label><input type="number" id="estDays" oninput="updateFinance()"></div>
@@ -161,7 +163,7 @@
                 <div class="col"><label>TÉNYLEGES KÖLTSÉG:</label><div id="fin-real" class="big-number" style="color:#c0392b;">0 Ft</div></div>
                 <div class="col"><label>Aktuális Profit:</label><div id="fin-profit" class="big-number">0 Ft</div></div>
             </div>
-            <button class="btn-primary" style="margin-top:20px;" onclick="saveProject()">MENTÉS</button>
+            <button class="btn-primary" style="margin-top:20px;" onclick="saveProject()">PROJEKT MENTÉSE</button>
         </div>
     </div>
 
@@ -184,18 +186,16 @@
 
     <div id="database" class="section">
         <div class="card">
-            <h2>🤖 Robot Árfrissítés</h2>
+            <h2>🤖 Robot Árfrissítés (Felhőből)</h2>
             <div class="robot-box">
-                <p><strong>1. Lépés:</strong> Futtasd le a <code>scraper.py</code> programot.</p>
-                <p><strong>2. Lépés:</strong> Tallózd be a <code>friss_arak.json</code> fájlt:</p>
-                <input type="file" id="jsonFileInput" accept=".json" style="background:white; padding:10px;">
-                <br><br>
-                <button class="btn-primary" onclick="processRobotFile()">🚀 Árak Betöltése</button>
+                <p>A GitHub Serverless Robot által generált árak letöltése.</p>
+                <p style="font-size:0.9em; color:#555;">(Győződj meg róla, hogy a kódban beállítottad a helyes URL-t!)</p>
+                <button class="btn-primary" style="font-size:1.2em; padding: 15px;" onclick="processRobotURL()">☁️ Frissítés a Felhőből</button>
             </div>
         </div>
 
         <div class="card">
-            <h2>Egyéb Eszközök</h2>
+            <h2>Kézi Eszközök</h2>
             <div class="row" style="background:#e8f6f3; padding:15px; border-radius:5px;">
                 <div class="col"><label>Globális áremelés (%):</label><input type="number" id="priceMultiplier" placeholder="Pl. 10"></div>
                 <div class="col"><label>&nbsp;</label><button class="btn-warning" onclick="applyGlobalPriceChange()">Módosítás</button></div>
@@ -221,6 +221,14 @@
 </div>
 
 <script>
+    // ==========================================
+    // ⚙️ BEÁLLÍTÁSOK - Ezt írd át a sajátodra!
+    // ==========================================
+    // Formátum: https://raw.githubusercontent.com/FELHASZNALO/REPO/main/friss_arak.json
+    const ROBOT_URL = "https://raw.githubusercontent.com/FELHASZNALONEV/epitomester-erp/main/friss_arak.json"; 
+
+
+    // --- ALAP ADATOK ---
     const defaultDB = {
         "Falazás": { unit: "nm", normPrice: 5500, materials: [{name:"Tégla 30 N+F", qtyPerUnit:16, unit:"db", price:890}, {name:"Habarcs", qtyPerUnit:15, unit:"kg", price:120}] },
         "Tetőfedés": { unit: "nm", normPrice: 4500, materials: [{name:"Tetőléc", qtyPerUnit:4, unit:"m", price:350}, {name:"Cserép", qtyPerUnit:12, unit:"db", price:450}] },
@@ -232,13 +240,11 @@
     let payouts = JSON.parse(localStorage.getItem('payouts')) || [];
     let db = JSON.parse(localStorage.getItem('constructionDB_v4')) || defaultDB;
 
-    if(db["Falazás"] && !db["Falazás"].materials) db = defaultDB;
-    
-    // UI Állapotok (Rendezés)
-    let sortDirection = 'desc'; // 'desc' = csökkenő (legújabb elől), 'asc' = növekvő
-
+    if(db["Falazás"] && !db["Falazás"].materials) db = defaultDB; // Migrációs védelem
+    let sortDirection = 'desc'; 
     let currentProject = {};
 
+    // --- INICIALIZÁLÁS ---
     init();
 
     function init() {
@@ -247,6 +253,7 @@
         populateDBSelect();
         document.getElementById('db-json').value = JSON.stringify(db, null, 4);
     }
+    
     function navTo(id) {
         document.querySelectorAll('.section').forEach(e => e.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
@@ -255,6 +262,8 @@
         if(id === 'database') document.getElementById('db-json').value = JSON.stringify(db, null, 4);
         if(id === 'dashboard') renderProjectList();
     }
+
+    // --- PROJEKT KEZELÉS ---
     function createNewProject() {
         currentProject = { id: null, materials: [], workLog: [], marketLaborRef: 0, estDays:0, estWorkers:2, estAvgWage:30000, margin:20, archived: false };
         clearInputs(); updateEditorUI(); navTo('editor');
@@ -285,109 +294,80 @@
         currentProject.estWorkers = Number(document.getElementById('estWorkers').value);
         currentProject.estAvgWage = Number(document.getElementById('estAvgWage').value);
         
-        // Biztosítjuk, hogy az archived property létezzen
         if(currentProject.archived === undefined) currentProject.archived = false;
 
         const fin = calculateFinance();
         currentProject.totalOffer = fin.offerPrice;
         currentProject.totalCost = fin.realCost;
-        // Mentjük a profitot is a rendezéshez
         currentProject.profit = fin.profit; 
 
         if(!currentProject.id) { currentProject.id = Date.now(); projects.push(currentProject); }
         else { const idx = projects.findIndex(p => p.id == currentProject.id); projects[idx] = currentProject; }
+        
         localStorage.setItem('projects_v4', JSON.stringify(projects));
         alert("Projekt mentve!"); renderProjectList(); renderBalanceTable(); navTo('dashboard');
     }
 
-    // --- ÚJ: RENDEZÉS ÉS ARCHIVÁLÁS LOGIKA ---
-
+    // --- RENDEZÉS ÉS LISTÁZÁS ---
     function toggleSortDir() {
         sortDirection = sortDirection === 'desc' ? 'asc' : 'desc';
         document.getElementById('sortDirBtn').innerText = sortDirection === 'desc' ? '⬇️' : '⬆️';
         renderProjectList();
     }
-
     function toggleArchive(id) {
-        const p = projects.find(x => x.id == id);
-        if(!p) return;
-        
+        const p = projects.find(x => x.id == id); if(!p) return;
         const action = p.archived ? "visszaállítod" : "archiválod";
-        if(confirm(`Biztosan ${action} a projektet?`)) {
+        if(confirm(`Biztosan ${action}?`)) {
             p.archived = !p.archived;
             localStorage.setItem('projects_v4', JSON.stringify(projects));
             renderProjectList();
         }
     }
-
     function renderProjectList() {
-        const list = document.getElementById('project-list'); 
-        list.innerHTML = "";
+        const list = document.getElementById('project-list'); list.innerHTML = "";
+        const viewMode = document.getElementById('viewFilter').value;
+        const sortBy = document.getElementById('sortBy').value;
         
-        const viewMode = document.getElementById('viewFilter').value; // 'active' vagy 'archived'
-        const sortBy = document.getElementById('sortBy').value; // 'id', 'progress', 'totalOffer', 'profit'
-        
-        // 1. Szűrés (Aktív vagy Archív)
-        // Ha undefined az archived, akkor false-nak vesszük
         let filtered = projects.filter(p => {
             const isArchived = !!p.archived;
             return viewMode === 'archived' ? isArchived : !isArchived;
         });
 
-        // 2. Rendezés
         filtered.sort((a, b) => {
-            let valA = a[sortBy] || 0;
-            let valB = b[sortBy] || 0;
-            
-            // Ha profit nincs mentve régieknél, számoljuk ki gyorsan
-            if(sortBy === 'profit') {
+            let valA = a[sortBy] || 0; let valB = b[sortBy] || 0;
+            if(sortBy === 'profit') { // Ha régi adat és nincs mentve profit
                 if(a.profit === undefined) valA = (a.totalOffer||0) - (a.totalCost||0);
                 if(b.profit === undefined) valB = (b.totalOffer||0) - (b.totalCost||0);
             }
-
-            if(sortDirection === 'asc') return valA - valB;
-            else return valB - valA;
+            return sortDirection === 'asc' ? valA - valB : valB - valA;
         });
 
-        if(filtered.length === 0) {
-            list.innerHTML = `<p style="text-align:center; color:#777;">Nincs megjeleníthető projekt ebben a nézetben.</p>`;
-            return;
-        }
+        if(filtered.length === 0) { list.innerHTML = `<p style="text-align:center; color:#777;">Nincs elem ebben a nézetben.</p>`; return; }
 
         filtered.forEach(p => {
             const isLoss = (p.totalCost > p.totalOffer);
             const rowClass = isLoss ? 'danger-row' : (p.archived ? 'archived-row' : '');
             const statusColor = isLoss ? 'red' : 'green';
-            
             const profitVal = (p.profit !== undefined) ? p.profit : (p.totalOffer - p.totalCost);
-
-            const archiveBtnText = p.archived ? "📂 Visszaállítás" : "🗄️ Archiválás";
-            const archiveBtnColor = p.archived ? "btn-secondary" : "btn-warning";
+            const archiveText = p.archived ? "📂 Visszaállítás" : "🗄️ Archiválás";
+            const archiveColor = p.archived ? "btn-secondary" : "btn-warning";
 
             list.innerHTML += `
                 <div class="row ${rowClass}" style="border-bottom:1px solid #eee; padding:10px;">
-                    <div class="col">
-                        <strong>${p.name}</strong> (${p.client})<br>
-                        <small>${p.address}</small>
-                    </div>
+                    <div class="col"><strong>${p.name}</strong> (${p.client})<br><small>${p.address}</small></div>
                     <div class="col" style="text-align:right;">
-                        <span style="color:${statusColor}; font-weight:bold;">
-                            Bevétel: ${Math.round(p.totalOffer||0).toLocaleString()} / Profit: ${Math.round(profitVal).toLocaleString()}
-                        </span>
-                        <div style="background:#ddd; height:6px; width:100%; margin-top:5px;">
-                            <div style="height:100%; background:${statusColor}; width:${p.progress}%"></div>
-                        </div>
+                        <span style="color:${statusColor}; font-weight:bold;">Bevétel: ${Math.round(p.totalOffer||0).toLocaleString()} / Profit: ${Math.round(profitVal).toLocaleString()}</span>
+                        <div style="background:#ddd; height:6px; width:100%; margin-top:5px;"><div style="height:100%; background:${statusColor}; width:${p.progress}%"></div></div>
                     </div>
                     <div class="col" style="flex:0.6; display:flex; gap:5px; justify-content: flex-end;">
                         <button class="btn-info" onclick="editProject(${p.id})">Megnyitás</button>
-                        <button class="${archiveBtnColor}" style="font-size:0.8em;" onclick="toggleArchive(${p.id})">${archiveBtnText}</button>
+                        <button class="${archiveColor}" style="font-size:0.8em;" onclick="toggleArchive(${p.id})">${archiveText}</button>
                     </div>
                 </div>`;
         });
     }
 
-    // --- MEGLÉVŐ FUNKCIÓK (VÁLTOZATLAN) ---
-
+    // --- EDITOR LOGIKA ---
     function updateCalcHint() {
         const type = document.getElementById('workTypeSelect').value, qty = document.getElementById('workQty').value;
         if(type && qty && db[type]) {
@@ -407,12 +387,13 @@
         const sel = document.getElementById('logWorkerSelect');
         const days = Number(document.getElementById('logDays').value);
         if(!sel.value) { alert("Válassz dolgozót!"); return; }
-        if(!days || days <= 0) { alert("Adj meg érvényes napot!"); return; }
+        if(!days || days <= 0) return;
         if(!currentProject.workLog) currentProject.workLog = [];
         currentProject.workLog.push({ worker: sel.value, days: days, rate: Number(sel.options[sel.selectedIndex].getAttribute('data-rate')) });
         updateEditorUI();
     }
     function removeWorkLog(idx) { currentProject.workLog.splice(idx, 1); updateEditorUI(); }
+    
     function updateEditorUI() {
         const mtb = document.getElementById('material-table'); mtb.innerHTML = ""; let matSum = 0;
         if(currentProject.materials) currentProject.materials.forEach((m, i) => {
@@ -448,6 +429,8 @@
         document.getElementById('projectId').value = ""; document.getElementById('clientName').value = ""; document.getElementById('projectName').value = ""; 
         document.getElementById('projectAddress').value = ""; document.getElementById('progress').value = 0;
     }
+
+    // --- PÉNZTÁR ---
     function addEmployee() { const n = document.getElementById('empName').value, r = document.getElementById('empRate').value; if(n && r) { employees.push({name:n, rate:r}); localStorage.setItem('employees', JSON.stringify(employees)); renderBalanceTable(); updateEditorUI(); }}
     function addPayout() { const w = document.getElementById('payWorkerSelect').value, a = Number(document.getElementById('payAmount').value); if(w && a) { payouts.push({ worker: w, amount: a }); localStorage.setItem('payouts', JSON.stringify(payouts)); alert("Kifizetés rögzítve!"); renderBalanceTable(); }}
     function renderBalanceTable() {
@@ -461,6 +444,8 @@
         }
     }
     function delEmp(n) { if(confirm("Törlöd?")) { employees = employees.filter(e => e.name !== n); localStorage.setItem('employees', JSON.stringify(employees)); renderBalanceTable(); } }
+
+    // --- ADATBÁZIS & ROBOT ---
     function populateDBSelect() { const s = document.getElementById('workTypeSelect'); s.innerHTML = "<option value=''>-- Válassz --</option>"; for(let k in db) s.innerHTML += `<option value="${k}">${k}</option>`; }
     function saveDatabase() { try { db = JSON.parse(document.getElementById('db-json').value); localStorage.setItem('constructionDB_v4', JSON.stringify(db)); populateDBSelect(); alert("Mentve!"); } catch(e) { alert("Hibás JSON!"); } }
     function resetDB() { if(confirm("Törlöd az egyedi árakat?")) { db = defaultDB; localStorage.setItem('constructionDB_v4', JSON.stringify(db)); document.getElementById('db-json').value = JSON.stringify(db, null, 4); populateDBSelect(); } }
@@ -485,19 +470,49 @@
         });
         if(c>0) { localStorage.setItem('constructionDB_v4', JSON.stringify(db)); document.getElementById('db-json').value = JSON.stringify(db, null, 4); alert(`${c} tétel frissítve!`); }
     }
-    function processRobotFile() {
-        const fileInput = document.getElementById('jsonFileInput'); const file = fileInput.files[0];
-        if (!file) { alert("Válassz fájlt!"); return; }
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const data = JSON.parse(e.target.result); const robotPrices = data.prices; let updateCount = 0;
-                for (let category in db) { if (db[category].materials) { db[category].materials.forEach(material => { if (robotPrices[material.name]) { material.price = robotPrices[material.name]; updateCount++; } }); } }
-                if (updateCount > 0) { localStorage.setItem('constructionDB_v4', JSON.stringify(db)); document.getElementById('db-json').value = JSON.stringify(db, null, 4); alert(`✅ SIKER! ${updateCount} db termék ára frissítve.`); } else alert("Nem találtam egyezést.");
-            } catch (error) { alert("Hiba a fájl olvasásakor!"); }
-        };
-        reader.readAsText(file);
+
+    // --- ROBOT URL BETÖLTÉS (FETCH) ---
+    async function processRobotURL() {
+        const btn = document.querySelector('button[onclick="processRobotURL()"]');
+        const originalText = btn.innerText;
+        btn.innerText = "⏳ Letöltés a GitHubról...";
+
+        try {
+            // A konstans a script tetején van definiálva!
+            const response = await fetch(ROBOT_URL);
+            if (!response.ok) throw new Error("Hálózati hiba: " + response.status);
+            
+            const data = await response.json();
+            const robotPrices = data.prices;
+            let updateCount = 0;
+
+            for (let category in db) {
+                if (db[category].materials) {
+                    db[category].materials.forEach(material => {
+                        if (robotPrices[material.name]) {
+                            material.price = robotPrices[material.name];
+                            updateCount++;
+                        }
+                    });
+                }
+            }
+
+            if (updateCount > 0) {
+                localStorage.setItem('constructionDB_v4', JSON.stringify(db));
+                document.getElementById('db-json').value = JSON.stringify(db, null, 4);
+                alert(`✅ SIKER! ${updateCount} db tétel frissítve a felhőből!\nFrissítve: ${data.last_updated}`);
+            } else {
+                alert("⚠️ A fájlt elértem, de nem volt benne egyező nevű termék.");
+            }
+
+        } catch (error) {
+            alert("Hiba: Nem sikerült letölteni az árakat.\nEllenőrizd a GitHub URL-t a kódban!");
+            console.error(error);
+        } finally {
+            btn.innerText = originalText;
+        }
     }
+
 </script>
 
 </body>

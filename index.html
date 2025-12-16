@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ÉpítőMester ERP v10.1 - Real Time</title>
+    <title>ÉpítőMester ERP v11.0 - Master Data</title>
     <style>
         /* --- STÍLUSOK --- */
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f6f8; color: #333; }
@@ -13,7 +13,7 @@
         nav button { background: none; border: none; color: white; padding: 15px 20px; cursor: pointer; font-size: 16px; transition: 0.2s; }
         nav button:hover, nav button.active { background-color: #e67e22; }
 
-        .container { padding: 20px; max-width: 1250px; margin: auto; }
+        .container { padding: 20px; max-width: 1300px; margin: auto; }
         .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #3498db; }
         
         .card.danger-row, .danger-row { background-color: #ffe6e6 !important; border-left-color: #c0392b !important; }
@@ -28,13 +28,35 @@
         label { display: block; font-weight: 600; font-size: 0.85em; margin-bottom: 5px; color: #555; }
         input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         
-        /* Táblázat beviteli mezők stílusa */
+        /* Táblázat beviteli mezők */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
         th { background-color: #ecf0f1; text-align: left; padding: 10px; color: #2c3e50; }
-        td { padding: 5px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        td { padding: 5px; border-bottom: 1px solid #eee; vertical-align: middle; position: relative; } /* position relative a kereső miatt */
         td input { border: 1px solid transparent; background: transparent; width: 100%; padding: 8px; font-size: 1em;}
         td input:focus { border: 1px solid #3498db; background: white; outline: none; border-radius: 4px; }
-        td input:hover { background: #f9f9f9; }
+        
+        /* --- OKOS KERESŐ LISTA STÍLUS (AUTOCOMPLETE) --- */
+        .suggestions-list {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            z-index: 1000;
+            width: 100%;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            top: 100%;
+            left: 0;
+        }
+        .suggestion-item {
+            padding: 8px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9em;
+        }
+        .suggestion-item:hover { background-color: #eaf2f8; color: #3498db; }
+        .suggestion-price { float: right; color: #e67e22; font-weight: bold; }
 
         button { cursor: pointer; border: none; border-radius: 4px; padding: 10px 15px; font-weight: bold; }
         .btn-primary { background-color: #27ae60; color: white; width: 100%; }
@@ -61,7 +83,7 @@
 <body>
 
 <header>
-    <h1>🏗️ ÉpítőMester ERP v10.1 (Real-Time)</h1>
+    <h1>🏗️ ÉpítőMester ERP v11.0</h1>
 </header>
 
 <nav>
@@ -69,7 +91,7 @@
     <button onclick="navTo('editor')">Aktív Projekt</button>
     <button onclick="navTo('norms')">📏 Normák & Receptek</button>
     <button onclick="navTo('team')">Pénztár</button>
-    <button onclick="navTo('database')">⚙️ Beállítások</button>
+    <button onclick="navTo('database')">⚙️ Cikktörzs & Adatok</button>
 </nav>
 
 <div class="container">
@@ -78,14 +100,14 @@
         <div class="card" style="border-left-color: #2c3e50;">
             <div class="control-bar">
                 <div class="sort-group">
-                    <label style="margin:0; margin-right:5px;">Nézet:</label>
+                    <label>Nézet:</label>
                     <select id="viewFilter" onchange="renderProjectList()" style="width: auto;">
                         <option value="active">🟢 Aktív Projektek</option>
                         <option value="archived">🗄️ Archívum</option>
                     </select>
                 </div>
                 <div class="sort-group">
-                    <label style="margin:0; margin-right:5px;">Rendezés:</label>
+                    <label>Rendezés:</label>
                     <select id="sortBy" onchange="renderProjectList()" style="width: auto;">
                         <option value="id">Létrehozás ideje</option>
                         <option value="progress">Haladás (%)</option>
@@ -115,8 +137,9 @@
         </div>
 
         <div class="card">
-            <h3>I. Anyagok & Költségek (Szerkeszthető)</h3>
-            <p style="font-size:0.8em; color:#666;">A táblázatban átírt árak azonnal frissítik a végösszeget!</p>
+            <h3>I. Anyagok & Költségek (Okos Keresővel 🔍)</h3>
+            <p style="font-size:0.8em; color:#666;">Kezdd el írni az anyag nevét, és válaszd ki a Cikktörzsből!</p>
+            
             <div class="row" style="background:#f1f2f6; padding:15px; border-radius:5px;">
                 <div class="col"><label>Norma Betöltése:</label><select id="workTypeSelect" onchange="updateCalcHint()"></select></div>
                 <div class="col"><label>Mennyiség (nm/m/db):</label><input type="number" id="workQty" placeholder="Pl. 20" oninput="updateCalcHint()"></div>
@@ -124,17 +147,17 @@
             </div>
             
             <table>
-                <thead><tr><th>Megnevezés</th><th width="100">Menny.</th><th width="80">Egység</th><th width="120">Egységár (Ft)</th><th width="120">Összesen (Ft)</th><th width="50"></th></tr></thead>
+                <thead><tr><th>Megnevezés (Kereső)</th><th width="100">Menny.</th><th width="80">Egység</th><th width="120">Egységár</th><th width="120">Összesen</th><th width="50"></th></tr></thead>
                 <tbody id="material-table"></tbody>
                 <tr><td colspan="4" align="right"><strong>Anyagköltség Összesen:</strong></td><td id="sumMaterial">0 Ft</td><td></td></tr>
             </table>
             
-            <button class="btn-info" style="margin-top:10px; font-size:0.9em; width:auto;" onclick="addManualMaterial()">+ Egyedi Anyag / Költség Sor</button>
+            <button class="btn-info" style="margin-top:10px; font-size:0.9em; width:auto;" onclick="addManualMaterial()">+ Egyedi Anyag Sor</button>
         </div>
 
         <div class="card">
             <h3>II. Munkadíj Tervezés</h3>
-            <div class="ref-price-box"><strong>📈 Piaci Kontroll (Norma alapján):</strong> <span id="marketLaborRef" style="font-weight:bold;">0 Ft</span>.</div>
+            <div class="ref-price-box"><strong>📈 Piaci Kontroll (Norma):</strong> <span id="marketLaborRef" style="font-weight:bold;">0 Ft</span>.</div>
             <div class="row" style="margin-top:15px;">
                 <div class="col"><label>Becsült Napok:</label><input type="number" id="estDays" oninput="calculateAndDisplaySums()"></div>
                 <div class="col"><label>Emberek:</label><input type="number" id="estWorkers" value="2" oninput="calculateAndDisplaySums()"></div>
@@ -150,14 +173,11 @@
                 <div class="col"><label>Napok:</label><input type="number" id="logDays" value="1"></div>
                 <div class="col"><label>&nbsp;</label><button class="btn-primary" onclick="addWorkLog()">Rögzítés</button></div>
             </div>
-            <table style="width:100%">
-                <thead><tr><th>Név</th><th>Nap</th><th>Saját Bér</th><th>Összeg</th><th></th></tr></thead>
-                <tbody id="worklog-table"></tbody>
-            </table>
+            <table style="width:100%"><tbody id="worklog-table"></tbody></table>
         </div>
 
         <div class="card finance-panel">
-            <h3>💰 Pénzügyi Eredmény (Real-Time)</h3>
+            <h3>💰 Pénzügyi Eredmény</h3>
             <div class="row">
                 <div class="col"><label>Haszonkulcs (%):</label><input type="number" id="margin" value="20" oninput="calculateAndDisplaySums()"></div>
                 <div class="col"><label>AJÁNLATI ÁR:</label><div id="fin-offer" class="big-number" style="color:#27ae60;">0 Ft</div></div>
@@ -182,8 +202,15 @@
                 <h3 id="normTitle"></h3>
                 <div class="row"><div class="col"><label>Mértékegység:</label><input type="text" id="normUnit" onchange="saveNormMeta()"></div><div class="col"><label>Piaci Munkadíj / egység (Ft):</label><input type="number" id="normLaborPrice" onchange="saveNormMeta()"></div></div>
                 <h4>Hozzávalók (Recept) 1 egységre:</h4>
+                <p style="font-size:0.8em; color:#666;">Itt is működik az okos kereső!</p>
                 <table><thead><tr><th>Anyag Neve</th><th>Mennyiség</th><th>Egység</th><th>Alapár (Ft)</th><th></th></tr></thead><tbody id="normTableBody"></tbody></table>
-                <div class="row" style="background:#eee; padding:10px; margin-top:10px; border-radius:5px;"><div class="col"><input type="text" id="newMatName" placeholder="Új anyag neve"></div><div class="col"><input type="number" id="newMatQty" placeholder="Menny."></div><div class="col"><input type="text" id="newMatUnit" placeholder="Egység"></div><div class="col"><input type="number" id="newMatPrice" placeholder="Ár"></div><div class="col"><button class="btn-primary" onclick="addMaterialToNorm()">+ Hozzáadás</button></div></div>
+                <div class="row" style="background:#eee; padding:10px; margin-top:10px; border-radius:5px;">
+                    <div class="col"><input type="text" id="newMatName" placeholder="Kezdd el írni az anyag nevét..." oninput="showSuggestions(this, 'newMat')"><div id="list-newMat" class="suggestions-list"></div></div>
+                    <div class="col"><input type="number" id="newMatQty" placeholder="Menny."></div>
+                    <div class="col"><input type="text" id="newMatUnit" placeholder="Egység"></div>
+                    <div class="col"><input type="number" id="newMatPrice" placeholder="Ár"></div>
+                    <div class="col"><button class="btn-primary" onclick="addMaterialToNorm()">+ Hozzáadás</button></div>
+                </div>
                 <div style="margin-top:20px; text-align:right;"><button class="btn-danger" onclick="deleteNormCategory()">🗑️ Kategória Törlése</button></div>
             </div>
         </div>
@@ -199,43 +226,70 @@
     </div>
 
     <div id="database" class="section">
-        <div class="card"><h2>🤖 Robot Árfrissítés</h2><div class="robot-box"><button class="btn-primary" style="font-size:1.2em; padding: 15px;" onclick="processRobotURL()">☁️ Frissítés a Felhőből</button></div></div>
-        <div class="card"><h2>Egyéb Eszközök</h2><div class="row" style="background:#e8f6f3; padding:15px; border-radius:5px;"><div class="col"><label>Globális áremelés (%):</label><input type="number" id="priceMultiplier" placeholder="Pl. 10"></div><div class="col"><label>&nbsp;</label><button class="btn-warning" onclick="applyGlobalPriceChange()">Módosítás</button></div></div><hr><h3>📥 CSV Import</h3><div class="import-box"><textarea id="csvInput" placeholder="Név;Ár formátum..." style="height:60px;"></textarea><button class="btn-info" onclick="processCSV()" style="margin-top:10px;">CSV Betöltés</button></div></div>
-        <div class="card"><h2>Nyers Adatbázis</h2><textarea id="db-json" style="width:100%; height:200px; border:1px solid #ccc; font-family:monospace;"></textarea><button class="btn-primary" onclick="saveDatabase()">Kézi Mentés</button></div>
+        
+        <div class="card" style="border-left-color: #8e44ad;">
+            <h2>📦 Központi Cikktörzs (Master Data)</h2>
+            <p>Itt töltheted be a "hatalmas" Excel táblázatot. Formátum: <code>Anyag Neve;Egység;Ár</code></p>
+            <div class="import-box">
+                <textarea id="masterCsvInput" placeholder="Példa:
+Mapei Keraflex;zsák;6500
+Tégla 30 N+F;db;950
+..." style="height:100px;"></textarea>
+                <br>
+                <button class="btn-primary" style="margin-top:10px;" onclick="processMasterCSV()">📥 Cikktörzs Betöltése (Excelből)</button>
+                <p id="masterCount" style="margin-top:5px; font-weight:bold; color:#8e44ad;">Jelenleg 0 tétel van a cikktörzsben.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🤖 Robot Árfrissítés</h2>
+            <div class="robot-box"><button class="btn-primary" style="font-size:1.2em; padding: 15px;" onclick="processRobotURL()">☁️ Frissítés a Felhőből</button></div>
+        </div>
+        <div class="card">
+            <h2>Egyéb Eszközök</h2>
+            <div class="row" style="background:#e8f6f3; padding:15px; border-radius:5px;"><div class="col"><label>Globális áremelés (%):</label><input type="number" id="priceMultiplier" placeholder="Pl. 10"></div><div class="col"><label>&nbsp;</label><button class="btn-warning" onclick="applyGlobalPriceChange()">Módosítás</button></div></div>
+        </div>
+        <div class="card"><h2>Nyers Adatbázis (Normák)</h2><textarea id="db-json" style="width:100%; height:150px; border:1px solid #ccc; font-family:monospace;"></textarea><button class="btn-primary" onclick="saveDatabase()">Kézi Mentés</button></div>
     </div>
 
 </div>
 
 <script>
-    // ==========================================
     // ⚙️ BEÁLLÍTÁS
-    // ==========================================
     const ROBOT_URL = "https://raw.githubusercontent.com/Cseega/epitomester-erp/refs/heads/main/friss_arak.json"; 
 
     // --- ALAP ADATOK ---
     const defaultDB = {
         "Falazás": { unit: "nm", normPrice: 5500, materials: [{name:"Tégla 30 N+F", qtyPerUnit:16, unit:"db", price:890}, {name:"Habarcs", qtyPerUnit:15, unit:"kg", price:120}] },
-        "Tetőfedés": { unit: "nm", normPrice: 4500, materials: [{name:"Tetőléc", qtyPerUnit:4, unit:"m", price:350}, {name:"Cserép", qtyPerUnit:12, unit:"db", price:450}] },
-        "Gipszkarton": { unit: "nm", normPrice: 3500, materials: [{name:"GK Lap", qtyPerUnit:1, unit:"nm", price:900}, {name:"Profil", qtyPerUnit:2.5, unit:"m", price:600}] }
+        "Tetőfedés": { unit: "nm", normPrice: 4500, materials: [{name:"Tetőléc", qtyPerUnit:4, unit:"m", price:350}, {name:"Cserép", qtyPerUnit:12, unit:"db", price:450}] }
     };
 
+    // ADATBETÖLTÉS
     let projects = JSON.parse(localStorage.getItem('projects_v4')) || [];
     let employees = JSON.parse(localStorage.getItem('employees')) || [];
     let payouts = JSON.parse(localStorage.getItem('payouts')) || [];
     let db = JSON.parse(localStorage.getItem('constructionDB_v4')) || defaultDB;
+    // ÚJ: Cikktörzs
+    let materialMasterDB = JSON.parse(localStorage.getItem('materialMasterDB')) || []; 
 
     if(!db["Falazás"] || !db["Falazás"].materials) { db = defaultDB; }
-
     let sortDirection = 'desc'; 
     let currentProject = {};
 
-    // --- INICIALIZÁLÁS ---
     init();
 
     function init() {
         populateDBSelect(); populateNormSelect();
         renderProjectList(); renderBalanceTable();
         document.getElementById('db-json').value = JSON.stringify(db, null, 4);
+        updateMasterCount();
+        
+        // Globális kattintás figyelő a keresőlisták bezárásához
+        document.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('suggestion-item') && !e.target.matches('input')) {
+                closeAllSuggestions();
+            }
+        });
     }
     
     function navTo(id) {
@@ -250,7 +304,107 @@
         if(id === 'editor') { populateWorkerSelectForLog(); populateDBSelect(); }
     }
 
-    // --- FŐ PROJEKT LOGIKA (REAL TIME JAVÍTÁS) ---
+    // --- CIKKTÖRZS & OKOS KERESŐ LOGIKA (ÚJ!) ---
+
+    function processMasterCSV() {
+        const txt = document.getElementById('masterCsvInput').value;
+        if(!txt) { alert("Nincs szöveg!"); return; }
+        
+        const lines = txt.split('\n');
+        let count = 0;
+        // Töröljük a régit vagy bővítjük? Most bővítjük/frissítjük.
+        // Ha resetelni akarod, uncomment: materialMasterDB = [];
+        
+        lines.forEach(line => {
+            let p = line.split(';'); if(p.length < 2) p = line.split('\t');
+            if(p.length >= 2) {
+                const name = p[0].trim();
+                const unit = p[1].trim();
+                const price = Number(p[2].replace(/[^0-9]/g, ''));
+                
+                if(name && price) {
+                    // Megnézzük van-e már ilyen, ha igen frissítjük
+                    const existingIdx = materialMasterDB.findIndex(m => m.name === name);
+                    if(existingIdx >= 0) {
+                        materialMasterDB[existingIdx] = { name, unit, price };
+                    } else {
+                        materialMasterDB.push({ name, unit, price });
+                    }
+                    count++;
+                }
+            }
+        });
+        
+        localStorage.setItem('materialMasterDB', JSON.stringify(materialMasterDB));
+        updateMasterCount();
+        alert(`${count} tétel feldolgozva a Cikktörzsbe!`);
+        document.getElementById('masterCsvInput').value = "";
+    }
+
+    function updateMasterCount() {
+        document.getElementById('masterCount').innerText = `Jelenleg ${materialMasterDB.length} tétel van a cikktörzsben.`;
+    }
+
+    // Kereső függvény
+    function showSuggestions(input, rowId) {
+        const val = input.value.toLowerCase();
+        // Keressük meg a list konténert
+        let listContainer;
+        if(rowId.startsWith('newMat')) {
+            // Norma szerkesztőnél
+            listContainer = document.getElementById('list-newMat');
+        } else {
+            // Projekt táblázatnál dinamikus ID
+            listContainer = document.getElementById(`list-${rowId}`);
+        }
+        
+        listContainer.innerHTML = '';
+        if (!val) return;
+
+        // Szűrés (max 10 találat a gyorsaságért)
+        const matches = materialMasterDB.filter(m => m.name.toLowerCase().includes(val)).slice(0, 10);
+
+        matches.forEach(match => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerHTML = `${match.name} <span class="suggestion-price">${match.price} Ft/${match.unit}</span>`;
+            div.onclick = function() {
+                selectSuggestion(match, input, rowId);
+            };
+            listContainer.appendChild(div);
+        });
+    }
+
+    function selectSuggestion(item, input, rowId) {
+        input.value = item.name;
+        
+        if(rowId.startsWith('newMat')) {
+            // Norma szerkesztő mezői
+            document.getElementById('newMatUnit').value = item.unit;
+            document.getElementById('newMatPrice').value = item.price;
+        } else {
+            // Projekt táblázat sorai (rowId egy index szám)
+            // Itt közvetlenül a data-t kell frissíteni és az UI-t
+            updateMaterialRow(rowId, 'name', item.name);
+            updateMaterialRow(rowId, 'unit', item.unit);
+            updateMaterialRow(rowId, 'price', item.price);
+            
+            // Input mezők frissítése a képernyőn
+            // (A updateMaterialRow csak az adatot frissíti, az UI inputokat nem írja át, ha mi gépelünk, de itt klikkelünk)
+            // Meg kell keresni a szomszédos inputokat
+            const tr = input.closest('tr');
+            tr.querySelectorAll('input')[2].value = item.unit; // 3. input az egység
+            tr.querySelectorAll('input')[3].value = item.price; // 4. input az ár
+        }
+        closeAllSuggestions();
+    }
+
+    function closeAllSuggestions() {
+        document.querySelectorAll('.suggestions-list').forEach(el => el.innerHTML = '');
+    }
+
+
+    // --- FŐ PROJEKT LOGIKA ---
 
     function populateDBSelect() { 
         const s = document.getElementById('workTypeSelect'); 
@@ -281,7 +435,7 @@
                 const laborCost = (db[type].normPrice || 0) * qty;
                 currentProject.marketLaborRef = (currentProject.marketLaborRef || 0) + laborCost;
 
-                updateEditorUI(); // Ez rajzolja ki a táblázatot
+                updateEditorUI(); 
                 document.getElementById('workQty').value = "";
                 document.getElementById('calcHint').innerText = "Hozzáadva!";
             } else {
@@ -293,14 +447,12 @@
     function addManualMaterial() {
         if (!currentProject || (!currentProject.id && currentProject.id !== null)) { alert("Nincs aktív projekt!"); return; }
         if(!currentProject.materials) currentProject.materials = [];
-        currentProject.materials.push({ name: "Új Tétel", qty: 1, unit: "db", price: 0 });
+        currentProject.materials.push({ name: "", qty: 1, unit: "db", price: 0 }); // Üres név, hogy lehessen keresni
         updateEditorUI();
     }
 
     // --- REAL TIME UPDATE LOGIKA ---
-    // Ez a függvény fut le minden billentyűleütésnél a táblázatban
     function updateMaterialRow(index, field, value) {
-        // 1. Adat frissítése a memóriában
         let val = value;
         if(field === 'qty' || field === 'price') {
             val = Number(value);
@@ -308,26 +460,19 @@
         }
         currentProject.materials[index][field] = val;
 
-        // 2. Csak a sor végösszegének frissítése (nem rajzoljuk újra az egészet!)
         const rowTotal = currentProject.materials[index].qty * currentProject.materials[index].price;
         const totalCell = document.getElementById(`row-total-${index}`);
         if(totalCell) totalCell.innerText = rowTotal.toLocaleString();
 
-        // 3. Globális számolás
         calculateAndDisplaySums();
     }
 
     function calculateAndDisplaySums() {
         const fin = calculateFinance();
-        
-        // Anyagösszeg frissítése
         document.getElementById('sumMaterial').innerText = Math.round(fin.matCost).toLocaleString() + " Ft";
-        
-        // Pénzügyi panel frissítése
         document.getElementById('estLaborTotal').innerText = Math.round(fin.estLabor).toLocaleString();
         document.getElementById('fin-offer').innerText = Math.round(fin.offerPrice).toLocaleString() + " Ft";
         document.getElementById('fin-real').innerText = Math.round(fin.realCost).toLocaleString() + " Ft";
-        
         const pEl = document.getElementById('fin-profit');
         pEl.innerText = Math.round(fin.profit).toLocaleString() + " Ft";
         pEl.style.color = fin.profit >= 0 ? 'green' : 'red';
@@ -359,14 +504,19 @@
     function updateEditorUI() {
         const mtb = document.getElementById('material-table'); 
         mtb.innerHTML = ""; 
+        let matSum = 0;
         
         if(currentProject.materials) {
             currentProject.materials.forEach((m, i) => {
                 const total = m.qty * m.price;
-                // Itt generáljuk az ID-kat és az oninput eseményeket
+                matSum += total;
+                // OKOS KERESŐ BEÉPÍTÉSE A TÁBLÁZATBA
                 mtb.innerHTML += `
                     <tr>
-                        <td><input type="text" value="${m.name}" oninput="updateMaterialRow(${i}, 'name', this.value)"></td>
+                        <td>
+                            <input type="text" value="${m.name}" placeholder="Anyag neve..." oninput="showSuggestions(this, ${i}); updateMaterialRow(${i}, 'name', this.value)">
+                            <div id="list-${i}" class="suggestions-list"></div>
+                        </td>
                         <td><input type="number" value="${m.qty}" oninput="updateMaterialRow(${i}, 'qty', this.value)"></td>
                         <td><input type="text" value="${m.unit}" oninput="updateMaterialRow(${i}, 'unit', this.value)"></td>
                         <td><input type="number" value="${m.price}" oninput="updateMaterialRow(${i}, 'price', this.value)"></td>
@@ -376,19 +526,16 @@
             });
         }
         
-        // Munkadíj ref frissítése
+        document.getElementById('sumMaterial').innerText = matSum.toLocaleString() + " Ft";
         document.getElementById('marketLaborRef').innerText = (currentProject.marketLaborRef||0).toLocaleString() + " Ft";
 
-        // Napló tábla
-        const ltb = document.getElementById('worklog-table'); 
-        ltb.innerHTML = "";
+        const ltb = document.getElementById('worklog-table'); ltb.innerHTML = "";
         if(currentProject.workLog) {
             currentProject.workLog.forEach((l, i) => {
                 ltb.innerHTML += `<tr><td>${l.worker}</td><td>${l.days}</td><td>${l.rate}</td><td>${(l.days*l.rate).toLocaleString()}</td><td><button class="btn-danger" onclick="removeWorkLog(${i})">X</button></td></tr>`;
             });
         }
-        
-        calculateAndDisplaySums(); // Inicializáláskor is kiszámoljuk
+        calculateAndDisplaySums(); 
     }
 
     function populateWorkerSelectForLog() {
@@ -430,15 +577,12 @@
         currentProject.estWorkers = Number(document.getElementById('estWorkers').value);
         currentProject.estAvgWage = Number(document.getElementById('estAvgWage').value);
         if(currentProject.archived === undefined) currentProject.archived = false;
-        
         const fin = calculateFinance();
         currentProject.totalOffer = fin.offerPrice;
         currentProject.totalCost = fin.realCost;
         currentProject.profit = fin.profit; 
-        
         if(!currentProject.id) { currentProject.id = Date.now(); projects.push(currentProject); }
         else { const idx = projects.findIndex(p => p.id == currentProject.id); projects[idx] = currentProject; }
-        
         localStorage.setItem('projects_v4', JSON.stringify(projects));
         alert("Projekt mentve!"); renderProjectList(); renderBalanceTable(); navTo('dashboard');
     }
@@ -559,7 +703,6 @@
     function delEmp(n) { if(confirm("Törlöd?")) { employees = employees.filter(e => e.name !== n); localStorage.setItem('employees', JSON.stringify(employees)); renderBalanceTable(); } }
 
     function saveDatabase() { try { db = JSON.parse(document.getElementById('db-json').value); saveAllDB(); alert("Mentve!"); } catch(e) { alert("Hibás JSON!"); } }
-    function resetDB() { if(confirm("Törlöd az egyedi árakat?")) { db = defaultDB; saveAllDB(); } }
     function applyGlobalPriceChange() {
         const p = Number(document.getElementById('priceMultiplier').value); if(!p) return;
         if(!confirm(`MINDEN árat módosítasz ${p}%-kal?`)) return;
@@ -567,20 +710,8 @@
         for(let k in db) { if(db[k].normPrice) db[k].normPrice = Math.round(db[k].normPrice * m); if(db[k].materials) db[k].materials.forEach(mat => mat.price = Math.round(mat.price * m)); }
         saveAllDB(); alert("Kész!");
     }
-    function processCSV() {
-        const txt = document.getElementById('csvInput').value; if(!txt) return;
-        let c = 0;
-        txt.split('\n').forEach(line => {
-            let p = line.split(';'); if(p.length < 2) p = line.split('\t');
-            if(p.length >= 2) {
-                const n = p[0].trim(), pr = Number(p[1].replace(/[^0-9]/g, ''));
-                if(n && pr > 0) {
-                    for(let k in db) if(db[k].materials) db[k].materials.forEach(m => { if(m.name.toLowerCase()===n.toLowerCase()) { m.price=pr; c++; }});
-                }
-            }
-        });
-        if(c>0) { saveAllDB(); alert(`${c} tétel frissítve!`); }
-    }
+    
+    // Robot frissítés
     async function processRobotURL() {
         const btn = document.querySelector('button[onclick="processRobotURL()"]'); const txt = btn.innerText; btn.innerText = "⏳ Letöltés...";
         try {

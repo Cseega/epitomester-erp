@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ÉpítőMester ERP v8.1 - STABIL</title>
+    <title>ÉpítőMester ERP v8.2 - FIX</title>
     <style>
         /* --- STÍLUSOK --- */
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f6f8; color: #333; }
@@ -16,7 +16,6 @@
         .container { padding: 20px; max-width: 1250px; margin: auto; }
         .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid #3498db; }
         
-        /* Speciális sorok */
         .card.danger-row, .danger-row { background-color: #ffe6e6 !important; border-left-color: #c0392b !important; }
         .card.archived-row, .archived-row { background-color: #f8f9fa !important; border-left-color: #95a5a6 !important; opacity: 0.8; }
 
@@ -40,7 +39,6 @@
         .btn-danger { background-color: #c0392b; color: white; padding: 5px 10px; font-size: 0.8em; }
         .btn-secondary { background-color: #7f8c8d; color: white; }
         
-        /* Dashboard Control Bar */
         .control-bar { background: #eef2f3; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .sort-group { display: flex; gap: 5px; align-items: center; }
 
@@ -59,7 +57,7 @@
 <body>
 
 <header>
-    <h1>🏗️ ÉpítőMester ERP v8.1 (Stabil)</h1>
+    <h1>🏗️ ÉpítőMester ERP v8.2</h1>
 </header>
 
 <nav>
@@ -253,9 +251,9 @@
 
 <script>
     // ==========================================
-    // ⚙️ BEÁLLÍTÁS - IDE MÁSOLD A SAJÁT URL-ED
+    // ⚙️ BEÁLLÍTÁS - A TE URL-ED BEÉGETVE:
     // ==========================================
-    const ROBOT_URL = "https://raw.githubusercontent.com/FELHASZNALONEV/epitomester-erp/main/friss_arak.json"; 
+    const ROBOT_URL = "https://raw.githubusercontent.com/Cseega/epitomester-erp/refs/heads/main/friss_arak.json"; 
 
 
     // --- ALAP ADATOK ---
@@ -265,25 +263,30 @@
         "Gipszkarton": { unit: "nm", normPrice: 3500, materials: [{name:"GK Lap", qtyPerUnit:1, unit:"nm", price:900}, {name:"Profil", qtyPerUnit:2.5, unit:"m", price:600}] }
     };
 
+    // Adatok betöltése
     let projects = JSON.parse(localStorage.getItem('projects_v4')) || [];
     let employees = JSON.parse(localStorage.getItem('employees')) || [];
     let payouts = JSON.parse(localStorage.getItem('payouts')) || [];
     let db = JSON.parse(localStorage.getItem('constructionDB_v4')) || defaultDB;
 
-    // Migrációs védelem: Ha a db sérült lenne
-    if(db["Falazás"] && !db["Falazás"].materials) db = defaultDB; 
+    // Adatbázis integritás ellenőrzés
+    if(!db["Falazás"] || !db["Falazás"].materials) {
+        console.warn("Sérült adatbázis észlelve, alapértelmezett visszaállítása...");
+        db = defaultDB;
+    }
 
     let sortDirection = 'desc'; 
     let currentProject = {};
 
     // --- INICIALIZÁLÁS ---
+    // Fontos: Először definiáljuk a függvényeket, utána hívjuk meg őket
     init();
 
     function init() {
+        populateDBSelect(); // Ez tölti fel a munkanem listát
+        populateNormSelect();
         renderProjectList();
         renderBalanceTable();
-        populateDBSelect();
-        populateNormSelect();
         document.getElementById('db-json').value = JSON.stringify(db, null, 4);
     }
     
@@ -296,32 +299,28 @@
         if(id === 'database') document.getElementById('db-json').value = JSON.stringify(db, null, 4);
         if(id === 'dashboard') renderProjectList();
         if(id === 'norms') populateNormSelect();
-        if(id === 'editor') populateWorkerSelectForLog(); // Biztosítjuk, hogy a lista friss
+        if(id === 'editor') populateWorkerSelectForLog();
     }
 
-    // --- FŐ PROJEKT LOGIKA (JAVÍTVA!) ---
+    // --- FŐ PROJEKT LOGIKA (JAVÍTVA) ---
+
+    function populateDBSelect() { 
+        const s = document.getElementById('workTypeSelect'); 
+        s.innerHTML = "<option value=''>-- Válassz --</option>"; 
+        for(let k in db) s.innerHTML += `<option value="${k}">${k}</option>`; 
+    }
 
     function addWorkTypeItems() {
-        // 1. Értékek kinyerése
         const typeSelect = document.getElementById('workTypeSelect');
         const qtyInput = document.getElementById('workQty');
         
         const type = typeSelect.value;
         const qty = Number(qtyInput.value);
 
-        // 2. Ellenőrzés
-        if(!type || type === "") {
-            alert("Kérlek válassz munkanemet!");
-            return;
-        }
-        if(!qty || qty <= 0) {
-            alert("Kérlek adj meg érvényes mennyiséget!");
-            return;
-        }
+        if(!type || type === "") { alert("Válassz munkanemet!"); return; }
+        if(!qty || qty <= 0) { alert("Adj meg mennyiséget!"); return; }
 
-        // 3. Adatbázis ellenőrzés
         if(db[type] && db[type].materials) {
-            // Hozzáadás
             db[type].materials.forEach(m => {
                 currentProject.materials.push({
                     name: m.name,
@@ -331,57 +330,33 @@
                 });
             });
 
-            // Referencia ár frissítése
             const laborCost = (db[type].normPrice || 0) * qty;
             currentProject.marketLaborRef = (currentProject.marketLaborRef || 0) + laborCost;
 
-            // UI Frissítése
             updateEditorUI();
-            
-            // Mező törlése
             qtyInput.value = "";
-            document.getElementById('calcHint').innerText = "Tételek hozzáadva!";
+            document.getElementById('calcHint').innerText = "Hozzáadva!";
         } else {
-            alert("Hiba: Ehhez a munkanemhez nincs receptúra az adatbázisban.");
+            alert("Hiba: Nincs ilyen recept az adatbázisban.");
         }
     }
 
     function addWorkLog() {
-        // 1. Értékek kinyerése
         const workerSelect = document.getElementById('logWorkerSelect');
         const daysInput = document.getElementById('logDays');
         
         const workerName = workerSelect.value;
         const days = Number(daysInput.value);
 
-        // 2. Ellenőrzés
-        if(!workerName || workerName === "") {
-            alert("Kérlek válassz dolgozót a listából! (Ha nincs, vedd fel a Pénztár fülön)");
-            return;
-        }
-        if(!days || days <= 0) {
-            alert("Kérlek adj meg ledolgozott napokat!");
-            return;
-        }
+        if(!workerName) { alert("Válassz dolgozót!"); return; }
+        if(!days || days <= 0) { alert("Adj meg napot!"); return; }
 
-        // 3. Inicializálás ha kell
         if(!currentProject.workLog) currentProject.workLog = [];
+        const rate = Number(workerSelect.options[workerSelect.selectedIndex].getAttribute('data-rate'));
 
-        // 4. Rate (Napidíj) megkeresése
-        // A select optionjéből vesszük ki az adatot
-        const selectedOption = workerSelect.options[workerSelect.selectedIndex];
-        const rate = Number(selectedOption.getAttribute('data-rate'));
-
-        // 5. Hozzáadás
-        currentProject.workLog.push({
-            worker: workerName,
-            days: days,
-            rate: rate
-        });
-
-        // 6. UI Frissítés
+        currentProject.workLog.push({ worker: workerName, days: days, rate: rate });
         updateEditorUI();
-        daysInput.value = "1"; // Reset
+        daysInput.value = "1";
     }
 
     function removeWorkLog(idx) { 
@@ -389,8 +364,12 @@
         updateEditorUI(); 
     }
 
+    function removeMaterial(idx) {
+        currentProject.materials.splice(idx, 1);
+        updateEditorUI();
+    }
+
     function updateEditorUI() {
-        // Anyag tábla
         const mtb = document.getElementById('material-table'); 
         mtb.innerHTML = ""; 
         let matSum = 0;
@@ -399,46 +378,22 @@
             currentProject.materials.forEach((m, i) => {
                 const total = m.qty * m.price;
                 matSum += total;
-                mtb.innerHTML += `
-                    <tr>
-                        <td>${m.name}</td>
-                        <td>${m.qty}</td>
-                        <td>${m.unit}</td>
-                        <td>${m.price}</td>
-                        <td>${total.toLocaleString()}</td>
-                        <td><button class="btn-danger" onclick="removeMaterial(${i})">X</button></td>
-                    </tr>`;
+                mtb.innerHTML += `<tr><td>${m.name}</td><td>${m.qty}</td><td>${m.unit}</td><td>${m.price}</td><td>${total.toLocaleString()}</td><td><button class="btn-danger" onclick="removeMaterial(${i})">X</button></td></tr>`;
             });
         }
         document.getElementById('sumMaterial').innerText = matSum.toLocaleString() + " Ft";
         document.getElementById('marketLaborRef').innerText = (currentProject.marketLaborRef||0).toLocaleString() + " Ft";
 
-        // Munkanapló tábla
         const ltb = document.getElementById('worklog-table'); 
         ltb.innerHTML = "";
-        
         if(currentProject.workLog) {
             currentProject.workLog.forEach((l, i) => {
-                ltb.innerHTML += `
-                    <tr>
-                        <td>${l.worker}</td>
-                        <td>${l.days}</td>
-                        <td>${l.rate}</td>
-                        <td>${(l.days*l.rate).toLocaleString()}</td>
-                        <td><button class="btn-danger" onclick="removeWorkLog(${i})">X</button></td>
-                    </tr>`;
+                ltb.innerHTML += `<tr><td>${l.worker}</td><td>${l.days}</td><td>${l.rate}</td><td>${(l.days*l.rate).toLocaleString()}</td><td><button class="btn-danger" onclick="removeWorkLog(${i})">X</button></td></tr>`;
             });
         }
-        
         updateFinance();
     }
 
-    function removeMaterial(idx) {
-        currentProject.materials.splice(idx, 1);
-        updateEditorUI();
-    }
-
-    // --- SEGÉDFÜGGVÉNY: DOLGOZÓ LISTA FRISSÍTÉSE ---
     function populateWorkerSelectForLog() {
         const lsel = document.getElementById('logWorkerSelect');
         lsel.innerHTML = "<option value=''>-- Válassz Dolgozót --</option>";
@@ -462,7 +417,6 @@
         if(!p.workLog) p.workLog = [];
         
         currentProject = JSON.parse(JSON.stringify(p));
-        
         document.getElementById('projectId').value = p.id;
         document.getElementById('clientName').value = p.client||"";
         document.getElementById('projectName').value = p.name||"";
@@ -502,17 +456,11 @@
         alert("Projekt mentve!"); renderProjectList(); renderBalanceTable(); navTo('dashboard');
     }
 
-    // --- PÉNZÜGYI SZÁMÍTÁSOK ---
     function calculateFinance() {
-        let matCost = 0; 
-        if(currentProject.materials) currentProject.materials.forEach(m => matCost += m.qty*m.price);
-        
-        let realLabor = 0; 
-        if(currentProject.workLog) currentProject.workLog.forEach(l => realLabor += l.days*l.rate);
-        
+        let matCost = 0; if(currentProject.materials) currentProject.materials.forEach(m => matCost += m.qty*m.price);
+        let realLabor = 0; if(currentProject.workLog) currentProject.workLog.forEach(l => realLabor += l.days*l.rate);
         const estLabor = (Number(document.getElementById('estDays').value)||0) * (Number(document.getElementById('estWorkers').value)||0) * (Number(document.getElementById('estAvgWage').value)||0);
         const margin = Number(document.getElementById('margin').value)||0;
-        
         const offerPrice = (matCost + estLabor) * (1 + margin/100);
         const realCost = matCost + realLabor;
         return { matCost, estLabor, realLabor, offerPrice, realCost, profit: offerPrice - realCost };
@@ -532,7 +480,6 @@
         s.innerHTML = "<option value=''>-- Válassz szerkesztéshez --</option>";
         for(let k in db) s.innerHTML += `<option value="${k}">${k}</option>`;
     }
-
     function createNewNorm() {
         const name = document.getElementById('newNormName').value;
         if(!name) { alert("Adj nevet!"); return; }
@@ -540,7 +487,6 @@
         db[name] = { unit: "nm", normPrice: 0, materials: [] };
         saveAllDB(); populateNormSelect(); document.getElementById('editNormSelect').value = name; renderNormEditor();
     }
-
     function renderNormEditor() {
         const key = document.getElementById('editNormSelect').value;
         const panel = document.getElementById('normEditorPanel');
@@ -554,7 +500,6 @@
             tbody.innerHTML += `<tr><td><input type="text" value="${m.name}" onchange="updateNormItem('${key}',${idx},'name',this.value)"></td><td><input type="number" value="${m.qtyPerUnit}" onchange="updateNormItem('${key}',${idx},'qtyPerUnit',this.value)"></td><td><input type="text" value="${m.unit}" onchange="updateNormItem('${key}',${idx},'unit',this.value)"></td><td><input type="number" value="${m.price}" onchange="updateNormItem('${key}',${idx},'price',this.value)"></td><td><button class="btn-danger" onclick="deleteNormItem('${key}',${idx})">X</button></td></tr>`;
         });
     }
-
     function updateNormItem(key, idx, field, val) {
         if(field === 'qtyPerUnit' || field === 'price') val = Number(val);
         db[key].materials[idx][field] = val; saveAllDB();
@@ -634,7 +579,6 @@
     }
     function delEmp(n) { if(confirm("Törlöd?")) { employees = employees.filter(e => e.name !== n); localStorage.setItem('employees', JSON.stringify(employees)); renderBalanceTable(); } }
 
-    function populateDBSelect() { const s = document.getElementById('workTypeSelect'); s.innerHTML = "<option value=''>-- Válassz --</option>"; for(let k in db) s.innerHTML += `<option value="${k}">${k}</option>`; }
     function saveDatabase() { try { db = JSON.parse(document.getElementById('db-json').value); saveAllDB(); alert("Mentve!"); } catch(e) { alert("Hibás JSON!"); } }
     function resetDB() { if(confirm("Törlöd az egyedi árakat?")) { db = defaultDB; saveAllDB(); } }
     function applyGlobalPriceChange() {

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ÉpítőMester ERP v10.0 - Free Edit</title>
+    <title>ÉpítőMester ERP v10.1 - Real Time</title>
     <style>
         /* --- STÍLUSOK --- */
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f6f8; color: #333; }
@@ -31,8 +31,8 @@
         /* Táblázat beviteli mezők stílusa */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
         th { background-color: #ecf0f1; text-align: left; padding: 10px; color: #2c3e50; }
-        td { padding: 5px; border-bottom: 1px solid #eee; }
-        td input { border: 1px solid transparent; background: transparent; width: 100%; padding: 5px; }
+        td { padding: 5px; border-bottom: 1px solid #eee; vertical-align: middle; }
+        td input { border: 1px solid transparent; background: transparent; width: 100%; padding: 8px; font-size: 1em;}
         td input:focus { border: 1px solid #3498db; background: white; outline: none; border-radius: 4px; }
         td input:hover { background: #f9f9f9; }
 
@@ -61,7 +61,7 @@
 <body>
 
 <header>
-    <h1>🏗️ ÉpítőMester ERP v10.0</h1>
+    <h1>🏗️ ÉpítőMester ERP v10.1 (Real-Time)</h1>
 </header>
 
 <nav>
@@ -116,6 +116,7 @@
 
         <div class="card">
             <h3>I. Anyagok & Költségek (Szerkeszthető)</h3>
+            <p style="font-size:0.8em; color:#666;">A táblázatban átírt árak azonnal frissítik a végösszeget!</p>
             <div class="row" style="background:#f1f2f6; padding:15px; border-radius:5px;">
                 <div class="col"><label>Norma Betöltése:</label><select id="workTypeSelect" onchange="updateCalcHint()"></select></div>
                 <div class="col"><label>Mennyiség (nm/m/db):</label><input type="number" id="workQty" placeholder="Pl. 20" oninput="updateCalcHint()"></div>
@@ -123,7 +124,7 @@
             </div>
             
             <table>
-                <thead><tr><th>Megnevezés</th><th width="80">Menny.</th><th width="60">Egység</th><th width="100">Egységár</th><th width="100">Összesen</th><th width="50"></th></tr></thead>
+                <thead><tr><th>Megnevezés</th><th width="100">Menny.</th><th width="80">Egység</th><th width="120">Egységár (Ft)</th><th width="120">Összesen (Ft)</th><th width="50"></th></tr></thead>
                 <tbody id="material-table"></tbody>
                 <tr><td colspan="4" align="right"><strong>Anyagköltség Összesen:</strong></td><td id="sumMaterial">0 Ft</td><td></td></tr>
             </table>
@@ -135,9 +136,9 @@
             <h3>II. Munkadíj Tervezés</h3>
             <div class="ref-price-box"><strong>📈 Piaci Kontroll (Norma alapján):</strong> <span id="marketLaborRef" style="font-weight:bold;">0 Ft</span>.</div>
             <div class="row" style="margin-top:15px;">
-                <div class="col"><label>Becsült Napok:</label><input type="number" id="estDays" oninput="updateFinance()"></div>
-                <div class="col"><label>Emberek:</label><input type="number" id="estWorkers" value="2" oninput="updateFinance()"></div>
-                <div class="col"><label>Átlag Napidíj:</label><input type="number" id="estAvgWage" value="30000" oninput="updateFinance()"></div>
+                <div class="col"><label>Becsült Napok:</label><input type="number" id="estDays" oninput="calculateAndDisplaySums()"></div>
+                <div class="col"><label>Emberek:</label><input type="number" id="estWorkers" value="2" oninput="calculateAndDisplaySums()"></div>
+                <div class="col"><label>Átlag Napidíj:</label><input type="number" id="estAvgWage" value="30000" oninput="calculateAndDisplaySums()"></div>
             </div>
             <div style="text-align:right; font-weight:bold; color:#e67e22; margin-top:5px;">Saját Becsült Munkadíj: <span id="estLaborTotal">0</span> Ft</div>
         </div>
@@ -156,9 +157,9 @@
         </div>
 
         <div class="card finance-panel">
-            <h3>💰 Pénzügyi Eredmény</h3>
+            <h3>💰 Pénzügyi Eredmény (Real-Time)</h3>
             <div class="row">
-                <div class="col"><label>Haszonkulcs (%):</label><input type="number" id="margin" value="20" onchange="updateFinance()"></div>
+                <div class="col"><label>Haszonkulcs (%):</label><input type="number" id="margin" value="20" oninput="calculateAndDisplaySums()"></div>
                 <div class="col"><label>AJÁNLATI ÁR:</label><div id="fin-offer" class="big-number" style="color:#27ae60;">0 Ft</div></div>
             </div>
             <hr>
@@ -174,37 +175,15 @@
         <div class="card">
             <h2>📏 Norma és Recept Szerkesztő</h2>
             <div class="row" style="align-items: center; background: #f0f8ff; padding: 15px; border-radius: 5px;">
-                <div class="col">
-                    <label>Válassz Munkanemet:</label>
-                    <select id="editNormSelect" onchange="renderNormEditor()"></select>
-                </div>
-                <div class="col">
-                    <label>Új Létrehozása:</label>
-                    <div style="display:flex; gap:5px;">
-                        <input type="text" id="newNormName" placeholder="Pl. Térkövezés">
-                        <button class="btn-info" onclick="createNewNorm()">Létrehozás</button>
-                    </div>
-                </div>
+                <div class="col"><label>Válassz Munkanemet:</label><select id="editNormSelect" onchange="renderNormEditor()"></select></div>
+                <div class="col"><label>Új Létrehozása:</label><div style="display:flex; gap:5px;"><input type="text" id="newNormName" placeholder="Pl. Térkövezés"><button class="btn-info" onclick="createNewNorm()">Létrehozás</button></div></div>
             </div>
-
             <div id="normEditorPanel" style="display:none; margin-top:20px;">
                 <h3 id="normTitle"></h3>
-                <div class="row">
-                    <div class="col"><label>Mértékegység:</label><input type="text" id="normUnit" onchange="saveNormMeta()"></div>
-                    <div class="col"><label>Piaci Munkadíj / egység (Ft):</label><input type="number" id="normLaborPrice" onchange="saveNormMeta()"></div>
-                </div>
+                <div class="row"><div class="col"><label>Mértékegység:</label><input type="text" id="normUnit" onchange="saveNormMeta()"></div><div class="col"><label>Piaci Munkadíj / egység (Ft):</label><input type="number" id="normLaborPrice" onchange="saveNormMeta()"></div></div>
                 <h4>Hozzávalók (Recept) 1 egységre:</h4>
-                <table>
-                    <thead><tr><th>Anyag Neve</th><th>Mennyiség</th><th>Egység</th><th>Alapár (Ft)</th><th></th></tr></thead>
-                    <tbody id="normTableBody"></tbody>
-                </table>
-                <div class="row" style="background:#eee; padding:10px; margin-top:10px; border-radius:5px;">
-                    <div class="col"><input type="text" id="newMatName" placeholder="Új anyag neve"></div>
-                    <div class="col"><input type="number" id="newMatQty" placeholder="Menny."></div>
-                    <div class="col"><input type="text" id="newMatUnit" placeholder="Egység"></div>
-                    <div class="col"><input type="number" id="newMatPrice" placeholder="Ár"></div>
-                    <div class="col"><button class="btn-primary" onclick="addMaterialToNorm()">+ Hozzáadás</button></div>
-                </div>
+                <table><thead><tr><th>Anyag Neve</th><th>Mennyiség</th><th>Egység</th><th>Alapár (Ft)</th><th></th></tr></thead><tbody id="normTableBody"></tbody></table>
+                <div class="row" style="background:#eee; padding:10px; margin-top:10px; border-radius:5px;"><div class="col"><input type="text" id="newMatName" placeholder="Új anyag neve"></div><div class="col"><input type="number" id="newMatQty" placeholder="Menny."></div><div class="col"><input type="text" id="newMatUnit" placeholder="Egység"></div><div class="col"><input type="number" id="newMatPrice" placeholder="Ár"></div><div class="col"><button class="btn-primary" onclick="addMaterialToNorm()">+ Hozzáadás</button></div></div>
                 <div style="margin-top:20px; text-align:right;"><button class="btn-danger" onclick="deleteNormCategory()">🗑️ Kategória Törlése</button></div>
             </div>
         </div>
@@ -213,45 +192,16 @@
     <div id="team" class="section">
         <div class="card">
             <h2>👥 Munkaerő Pénztárca</h2>
-            <div class="row" style="border-bottom:1px solid #eee; padding-bottom:15px;">
-                <div class="col"><input type="text" id="empName" placeholder="Új Dolgozó Neve"></div>
-                <div class="col"><input type="number" id="empRate" placeholder="Napidíj (Ft)"></div>
-                <div class="col"><button class="btn-info" onclick="addEmployee()">Felvétel</button></div>
-            </div>
-            <div class="row" style="background:#fff3cd; padding:15px; border-radius:5px; margin-top:20px;">
-                <div class="col"><label>Kinek fizetsz?</label><select id="payWorkerSelect"></select></div>
-                <div class="col"><label>Összeg (Ft):</label><input type="number" id="payAmount"></div>
-                <div class="col"><button class="btn-primary" onclick="addPayout()">Kifizetés rögzítése</button></div>
-            </div>
+            <div class="row" style="border-bottom:1px solid #eee; padding-bottom:15px;"><div class="col"><input type="text" id="empName" placeholder="Új Dolgozó Neve"></div><div class="col"><input type="number" id="empRate" placeholder="Napidíj (Ft)"></div><div class="col"><button class="btn-info" onclick="addEmployee()">Felvétel</button></div></div>
+            <div class="row" style="background:#fff3cd; padding:15px; border-radius:5px; margin-top:20px;"><div class="col"><label>Kinek fizetsz?</label><select id="payWorkerSelect"></select></div><div class="col"><label>Összeg (Ft):</label><input type="number" id="payAmount"></div><div class="col"><button class="btn-primary" onclick="addPayout()">Kifizetés rögzítése</button></div></div>
             <table id="balance-table"><thead><tr><th>Név</th><th>Ledolgozva</th><th>Kifizetve</th><th>Egyenleg</th><th></th></tr></thead><tbody></tbody></table>
         </div>
     </div>
 
     <div id="database" class="section">
-        <div class="card">
-            <h2>🤖 Robot Árfrissítés</h2>
-            <div class="robot-box">
-                <button class="btn-primary" style="font-size:1.2em; padding: 15px;" onclick="processRobotURL()">☁️ Frissítés a Felhőből</button>
-            </div>
-        </div>
-        <div class="card">
-            <h2>Egyéb Eszközök</h2>
-            <div class="row" style="background:#e8f6f3; padding:15px; border-radius:5px;">
-                <div class="col"><label>Globális áremelés (%):</label><input type="number" id="priceMultiplier" placeholder="Pl. 10"></div>
-                <div class="col"><label>&nbsp;</label><button class="btn-warning" onclick="applyGlobalPriceChange()">Módosítás</button></div>
-            </div>
-            <hr>
-            <h3>📥 CSV Import</h3>
-            <div class="import-box">
-                <textarea id="csvInput" placeholder="Név;Ár formátum..." style="height:60px;"></textarea>
-                <button class="btn-info" onclick="processCSV()" style="margin-top:10px;">CSV Betöltés</button>
-            </div>
-        </div>
-        <div class="card">
-            <h2>Nyers Adatbázis</h2>
-            <textarea id="db-json" style="width:100%; height:200px; border:1px solid #ccc; font-family:monospace;"></textarea>
-            <button class="btn-primary" onclick="saveDatabase()">Kézi Mentés</button>
-        </div>
+        <div class="card"><h2>🤖 Robot Árfrissítés</h2><div class="robot-box"><button class="btn-primary" style="font-size:1.2em; padding: 15px;" onclick="processRobotURL()">☁️ Frissítés a Felhőből</button></div></div>
+        <div class="card"><h2>Egyéb Eszközök</h2><div class="row" style="background:#e8f6f3; padding:15px; border-radius:5px;"><div class="col"><label>Globális áremelés (%):</label><input type="number" id="priceMultiplier" placeholder="Pl. 10"></div><div class="col"><label>&nbsp;</label><button class="btn-warning" onclick="applyGlobalPriceChange()">Módosítás</button></div></div><hr><h3>📥 CSV Import</h3><div class="import-box"><textarea id="csvInput" placeholder="Név;Ár formátum..." style="height:60px;"></textarea><button class="btn-info" onclick="processCSV()" style="margin-top:10px;">CSV Betöltés</button></div></div>
+        <div class="card"><h2>Nyers Adatbázis</h2><textarea id="db-json" style="width:100%; height:200px; border:1px solid #ccc; font-family:monospace;"></textarea><button class="btn-primary" onclick="saveDatabase()">Kézi Mentés</button></div>
     </div>
 
 </div>
@@ -261,7 +211,6 @@
     // ⚙️ BEÁLLÍTÁS
     // ==========================================
     const ROBOT_URL = "https://raw.githubusercontent.com/Cseega/epitomester-erp/refs/heads/main/friss_arak.json"; 
-
 
     // --- ALAP ADATOK ---
     const defaultDB = {
@@ -301,7 +250,7 @@
         if(id === 'editor') { populateWorkerSelectForLog(); populateDBSelect(); }
     }
 
-    // --- FŐ PROJEKT LOGIKA (JAVÍTVA + SZERKESZTHETŐ) ---
+    // --- FŐ PROJEKT LOGIKA (REAL TIME JAVÍTÁS) ---
 
     function populateDBSelect() { 
         const s = document.getElementById('workTypeSelect'); 
@@ -332,7 +281,7 @@
                 const laborCost = (db[type].normPrice || 0) * qty;
                 currentProject.marketLaborRef = (currentProject.marketLaborRef || 0) + laborCost;
 
-                updateEditorUI();
+                updateEditorUI(); // Ez rajzolja ki a táblázatot
                 document.getElementById('workQty').value = "";
                 document.getElementById('calcHint').innerText = "Hozzáadva!";
             } else {
@@ -341,25 +290,47 @@
         } catch (err) { console.error(err); alert("Hiba: " + err.message); }
     }
 
-    // ÚJ: EGYEDI ANYAG HOZZÁADÁSA
     function addManualMaterial() {
         if (!currentProject || (!currentProject.id && currentProject.id !== null)) { alert("Nincs aktív projekt!"); return; }
         if(!currentProject.materials) currentProject.materials = [];
-        
-        currentProject.materials.push({
-            name: "Új Tétel",
-            qty: 1,
-            unit: "db",
-            price: 0
-        });
+        currentProject.materials.push({ name: "Új Tétel", qty: 1, unit: "db", price: 0 });
         updateEditorUI();
     }
 
-    // ÚJ: ANYAG SOR FRISSÍTÉSE (ON-THE-FLY)
+    // --- REAL TIME UPDATE LOGIKA ---
+    // Ez a függvény fut le minden billentyűleütésnél a táblázatban
     function updateMaterialRow(index, field, value) {
-        if(field === 'qty' || field === 'price') value = Number(value);
-        currentProject.materials[index][field] = value;
-        updateFinance(); // Azonnali újraszámolás
+        // 1. Adat frissítése a memóriában
+        let val = value;
+        if(field === 'qty' || field === 'price') {
+            val = Number(value);
+            if(isNaN(val)) val = 0;
+        }
+        currentProject.materials[index][field] = val;
+
+        // 2. Csak a sor végösszegének frissítése (nem rajzoljuk újra az egészet!)
+        const rowTotal = currentProject.materials[index].qty * currentProject.materials[index].price;
+        const totalCell = document.getElementById(`row-total-${index}`);
+        if(totalCell) totalCell.innerText = rowTotal.toLocaleString();
+
+        // 3. Globális számolás
+        calculateAndDisplaySums();
+    }
+
+    function calculateAndDisplaySums() {
+        const fin = calculateFinance();
+        
+        // Anyagösszeg frissítése
+        document.getElementById('sumMaterial').innerText = Math.round(fin.matCost).toLocaleString() + " Ft";
+        
+        // Pénzügyi panel frissítése
+        document.getElementById('estLaborTotal').innerText = Math.round(fin.estLabor).toLocaleString();
+        document.getElementById('fin-offer').innerText = Math.round(fin.offerPrice).toLocaleString() + " Ft";
+        document.getElementById('fin-real').innerText = Math.round(fin.realCost).toLocaleString() + " Ft";
+        
+        const pEl = document.getElementById('fin-profit');
+        pEl.innerText = Math.round(fin.profit).toLocaleString() + " Ft";
+        pEl.style.color = fin.profit >= 0 ? 'green' : 'red';
     }
 
     function addWorkLog() {
@@ -388,27 +359,27 @@
     function updateEditorUI() {
         const mtb = document.getElementById('material-table'); 
         mtb.innerHTML = ""; 
-        let matSum = 0;
         
         if(currentProject.materials) {
             currentProject.materials.forEach((m, i) => {
                 const total = m.qty * m.price;
-                matSum += total;
-                // ITT A LÉNYEG: INPUT MEZŐK A TÁBLÁZATBAN
+                // Itt generáljuk az ID-kat és az oninput eseményeket
                 mtb.innerHTML += `
                     <tr>
                         <td><input type="text" value="${m.name}" oninput="updateMaterialRow(${i}, 'name', this.value)"></td>
                         <td><input type="number" value="${m.qty}" oninput="updateMaterialRow(${i}, 'qty', this.value)"></td>
                         <td><input type="text" value="${m.unit}" oninput="updateMaterialRow(${i}, 'unit', this.value)"></td>
                         <td><input type="number" value="${m.price}" oninput="updateMaterialRow(${i}, 'price', this.value)"></td>
-                        <td><strong>${total.toLocaleString()}</strong></td>
+                        <td id="row-total-${i}"><strong>${total.toLocaleString()}</strong></td>
                         <td><button class="btn-danger" style="padding:2px 8px;" onclick="removeMaterial(${i})">X</button></td>
                     </tr>`;
             });
         }
-        document.getElementById('sumMaterial').innerText = matSum.toLocaleString() + " Ft";
+        
+        // Munkadíj ref frissítése
         document.getElementById('marketLaborRef').innerText = (currentProject.marketLaborRef||0).toLocaleString() + " Ft";
 
+        // Napló tábla
         const ltb = document.getElementById('worklog-table'); 
         ltb.innerHTML = "";
         if(currentProject.workLog) {
@@ -416,7 +387,8 @@
                 ltb.innerHTML += `<tr><td>${l.worker}</td><td>${l.days}</td><td>${l.rate}</td><td>${(l.days*l.rate).toLocaleString()}</td><td><button class="btn-danger" onclick="removeWorkLog(${i})">X</button></td></tr>`;
             });
         }
-        updateFinance();
+        
+        calculateAndDisplaySums(); // Inicializáláskor is kiszámoljuk
     }
 
     function populateWorkerSelectForLog() {
@@ -458,12 +430,15 @@
         currentProject.estWorkers = Number(document.getElementById('estWorkers').value);
         currentProject.estAvgWage = Number(document.getElementById('estAvgWage').value);
         if(currentProject.archived === undefined) currentProject.archived = false;
+        
         const fin = calculateFinance();
         currentProject.totalOffer = fin.offerPrice;
         currentProject.totalCost = fin.realCost;
         currentProject.profit = fin.profit; 
+        
         if(!currentProject.id) { currentProject.id = Date.now(); projects.push(currentProject); }
         else { const idx = projects.findIndex(p => p.id == currentProject.id); projects[idx] = currentProject; }
+        
         localStorage.setItem('projects_v4', JSON.stringify(projects));
         alert("Projekt mentve!"); renderProjectList(); renderBalanceTable(); navTo('dashboard');
     }
@@ -476,14 +451,6 @@
         const offerPrice = (matCost + estLabor) * (1 + margin/100);
         const realCost = matCost + realLabor;
         return { matCost, estLabor, realLabor, offerPrice, realCost, profit: offerPrice - realCost };
-    }
-
-    function updateFinance() {
-        const fin = calculateFinance();
-        document.getElementById('estLaborTotal').innerText = fin.estLabor.toLocaleString();
-        document.getElementById('fin-offer').innerText = Math.round(fin.offerPrice).toLocaleString() + " Ft";
-        document.getElementById('fin-real').innerText = Math.round(fin.realCost).toLocaleString() + " Ft";
-        const pEl = document.getElementById('fin-profit'); pEl.innerText = Math.round(fin.profit).toLocaleString() + " Ft"; pEl.style.color = fin.profit >= 0 ? 'green' : 'red';
     }
 
     // --- NORMA SZERKESZTŐ ---

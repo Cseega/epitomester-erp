@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ÉpítőMester ERP v8.2 - FIX</title>
+    <title>ÉpítőMester ERP v9.0 - Bulletproof</title>
     <style>
         /* --- STÍLUSOK --- */
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f6f8; color: #333; }
@@ -57,7 +57,7 @@
 <body>
 
 <header>
-    <h1>🏗️ ÉpítőMester ERP v8.2</h1>
+    <h1>🏗️ ÉpítőMester ERP v9.0</h1>
 </header>
 
 <nav>
@@ -279,11 +279,10 @@
     let currentProject = {};
 
     // --- INICIALIZÁLÁS ---
-    // Fontos: Először definiáljuk a függvényeket, utána hívjuk meg őket
     init();
 
     function init() {
-        populateDBSelect(); // Ez tölti fel a munkanem listát
+        populateDBSelect(); 
         populateNormSelect();
         renderProjectList();
         renderBalanceTable();
@@ -299,7 +298,12 @@
         if(id === 'database') document.getElementById('db-json').value = JSON.stringify(db, null, 4);
         if(id === 'dashboard') renderProjectList();
         if(id === 'norms') populateNormSelect();
-        if(id === 'editor') populateWorkerSelectForLog();
+        
+        // FONTOS JAVÍTÁS: Mindig újratöltjük a listákat, ha a szerkesztőre lépünk
+        if(id === 'editor') {
+            populateWorkerSelectForLog();
+            populateDBSelect(); // Biztosítjuk, hogy a munkanem lista ott legyen
+        }
     }
 
     // --- FŐ PROJEKT LOGIKA (JAVÍTVA) ---
@@ -311,52 +315,76 @@
     }
 
     function addWorkTypeItems() {
-        const typeSelect = document.getElementById('workTypeSelect');
-        const qtyInput = document.getElementById('workQty');
-        
-        const type = typeSelect.value;
-        const qty = Number(qtyInput.value);
+        try {
+            // 0. BIZTONSÁGI ELLENŐRZÉS: Van-e aktív projekt?
+            if (!currentProject || (!currentProject.id && currentProject.id !== null)) {
+                alert("Hiba: Nincs aktív projekt kiválasztva! Kérlek menj a 'Projektek' fülre és nyiss meg egyet, vagy hozz létre újat.");
+                return;
+            }
 
-        if(!type || type === "") { alert("Válassz munkanemet!"); return; }
-        if(!qty || qty <= 0) { alert("Adj meg mennyiséget!"); return; }
+            // Ha véletlenül nem létezne a materials tömb
+            if(!currentProject.materials) currentProject.materials = [];
 
-        if(db[type] && db[type].materials) {
-            db[type].materials.forEach(m => {
-                currentProject.materials.push({
-                    name: m.name,
-                    qty: m.qtyPerUnit * qty,
-                    unit: m.unit,
-                    price: m.price
+            const typeSelect = document.getElementById('workTypeSelect');
+            const qtyInput = document.getElementById('workQty');
+            
+            const type = typeSelect.value;
+            const qty = Number(qtyInput.value);
+
+            if(!type || type === "") { alert("Válassz munkanemet!"); return; }
+            if(!qty || qty <= 0) { alert("Adj meg mennyiséget!"); return; }
+
+            if(db[type] && db[type].materials) {
+                db[type].materials.forEach(m => {
+                    currentProject.materials.push({
+                        name: m.name,
+                        qty: m.qtyPerUnit * qty,
+                        unit: m.unit,
+                        price: m.price
+                    });
                 });
-            });
 
-            const laborCost = (db[type].normPrice || 0) * qty;
-            currentProject.marketLaborRef = (currentProject.marketLaborRef || 0) + laborCost;
+                const laborCost = (db[type].normPrice || 0) * qty;
+                currentProject.marketLaborRef = (currentProject.marketLaborRef || 0) + laborCost;
 
-            updateEditorUI();
-            qtyInput.value = "";
-            document.getElementById('calcHint').innerText = "Hozzáadva!";
-        } else {
-            alert("Hiba: Nincs ilyen recept az adatbázisban.");
+                updateEditorUI();
+                qtyInput.value = "";
+                document.getElementById('calcHint').innerText = "Hozzáadva!";
+            } else {
+                alert("Hiba: Nincs ilyen recept az adatbázisban.");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Váratlan hiba történt a hozzáadáskor: " + err.message);
         }
     }
 
     function addWorkLog() {
-        const workerSelect = document.getElementById('logWorkerSelect');
-        const daysInput = document.getElementById('logDays');
-        
-        const workerName = workerSelect.value;
-        const days = Number(daysInput.value);
+        try {
+            if (!currentProject || (!currentProject.id && currentProject.id !== null)) {
+                alert("Hiba: Nincs aktív projekt! Kérlek nyiss meg egyet.");
+                return;
+            }
 
-        if(!workerName) { alert("Válassz dolgozót!"); return; }
-        if(!days || days <= 0) { alert("Adj meg napot!"); return; }
+            const workerSelect = document.getElementById('logWorkerSelect');
+            const daysInput = document.getElementById('logDays');
+            
+            const workerName = workerSelect.value;
+            const days = Number(daysInput.value);
 
-        if(!currentProject.workLog) currentProject.workLog = [];
-        const rate = Number(workerSelect.options[workerSelect.selectedIndex].getAttribute('data-rate'));
+            if(!workerName) { alert("Válassz dolgozót!"); return; }
+            if(!days || days <= 0) { alert("Adj meg napot!"); return; }
 
-        currentProject.workLog.push({ worker: workerName, days: days, rate: rate });
-        updateEditorUI();
-        daysInput.value = "1";
+            if(!currentProject.workLog) currentProject.workLog = [];
+            const rate = Number(workerSelect.options[workerSelect.selectedIndex].getAttribute('data-rate'));
+
+            currentProject.workLog.push({ worker: workerName, days: days, rate: rate });
+            updateEditorUI();
+            daysInput.value = "1";
+        } catch (err) {
+            console.error(err);
+            alert("Hiba a naplózáskor: " + err.message);
+        }
     }
 
     function removeWorkLog(idx) { 
